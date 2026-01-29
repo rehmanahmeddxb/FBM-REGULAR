@@ -539,10 +539,18 @@ def financial_ledger(client_id):
         balance += (t['due'] - t['paid'])
         total_delivered += t['qty']
         
-        # Format date if it's a datetime object
+        # Format date if it's a datetime object or string
         formatted_date = t['date']
         if isinstance(formatted_date, datetime):
             formatted_date = formatted_date.strftime('%d-%m-%Y')
+        elif isinstance(formatted_date, str):
+            try:
+                # Handle cases where it's already a string but might need formatting
+                # Entry dates are usually %Y-%m-%d
+                parsed_date = datetime.strptime(formatted_date, '%Y-%m-%d')
+                formatted_date = parsed_date.strftime('%d-%m-%Y')
+            except ValueError:
+                pass
             
         history.append({
             'date': formatted_date,
