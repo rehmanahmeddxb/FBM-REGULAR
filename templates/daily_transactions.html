@@ -1,0 +1,155 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+    <div>
+        <h2 class="fw-bold text-warning">Daily Transactions</h2>
+        <p class="text-light small mb-0">Detailed list of stock movements for the selected day.</p>
+    </div>
+    <div class="bg-dark border border-secondary rounded p-2 d-flex align-items-center shadow-sm">
+        <i class="bi bi-calendar3 me-2 text-warning"></i>
+        <input type="date" value="{{ sel_date }}" class="border-0 fw-bold text-white bg-transparent" style="outline: none; min-width: 130px;" onchange="location.href='?date='+this.value">
+    </div>
+</div>
+
+<div class="card bg-dark border-secondary mb-4 overflow-hidden" style="border-radius: 12px; border: 2px solid #334155;">
+    <div class="table-responsive">
+        <table class="table table-dark table-hover mb-0 align-middle">
+            <thead class="small text-uppercase" style="background: #0f172a;">
+                <tr>
+                    <th class="ps-3 text-white-50">Time</th>
+                    <th class="text-white-50">Type</th>
+                    <th class="text-white-50">Client</th>
+                    <th class="text-white-50">Material</th>
+                    <th class="text-white-50">Qty</th>
+                    <th class="text-white-50">Bill No</th>
+                    <th class="text-white-50">Nimbus No</th>
+                    <th class="text-white-50">By</th>
+                    <th class="text-end pe-3 text-white-50">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in entries %}
+                <tr style="border-bottom: 1px solid #334155;">
+                    <td class="ps-3 text-white-50">{{ e.time }}</td>
+                    <td>
+                        <span class="badge {{ 'bg-success' if e.type == 'IN' else 'bg-info text-dark' }} px-3 py-2 rounded-pill fw-bold">
+                            {{ e.type }}
+                        </span>
+                    </td>
+                    <td class="fw-bold text-white">{{ e.client or '---' }} <br><small class="text-white-50">{{ e.client_code or '' }}</small></td>
+                    <td class="text-warning fw-bold">{{ e.material }}</td>
+                    <td class="fw-bold {{ 'text-success' if e.type == 'IN' else 'text-info' }} fs-5">
+                        {{ '+' if e.type == 'IN' else '-' }}{{ e.qty|int }}
+                    </td>
+                    <td class="text-white-50">
+                        {{ e.bill_no or '---' }}
+                        {% if e.bill_no and pending_photos.get(e.bill_no) %}
+                        <a href="{{ pending_photos.get(e.bill_no) }}" target="_blank" class="ms-1 text-warning" title="View Bill Photo">
+                            <i class="bi bi-image"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                    <td class="text-white-50">{{ e.nimbus_no or '---' }}</td>
+                    <td class="text-info small fw-bold">{{ e.created_by or 'System' }}</td>
+                    <td class="text-end pe-3">
+                        {% if current_user.role == 'admin' or e.date == sel_date %}
+                        <button class="btn btn-warning btn-sm text-dark fw-bold rounded-pill" data-bs-toggle="modal" data-bs-target="#editLog{{ e.id }}">
+                            Edit
+                        </button>
+                        {% else %}
+                        <span class="badge bg-secondary opacity-50"><i class="bi bi-lock"></i> Locked</span>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                <!-- Edit Modal -->
+                <div class="modal fade" id="editLog{{ e.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content border-secondary shadow-lg" style="background: #1e293b; border-radius: 15px;">
+                            <form action="/edit_entry/{{ e.id }}" method="POST">
+                                <input type="hidden" name="redirect_to" value="daily_transactions">
+                                <div class="modal-header border-0">
+                                    <h5 class="text-warning fw-bold">Modify Record</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body pt-0">
+                                    <div class="row g-3">
+                                        <div class="col-md-4 col-6">
+                                            <label class="form-label small fw-bold text-uppercase text-white">Date</label>
+                                            <input type="date" name="date" value="{{ e.date }}" class="form-control bg-dark text-white border-secondary" required>
+                                        </div>
+                                        <div class="col-md-4 col-6">
+                                            <label class="form-label small fw-bold text-uppercase text-white">Time</label>
+                                            <input type="time" name="time" value="{{ e.time }}" class="form-control bg-dark text-white border-secondary">
+                                        </div>
+                                        <div class="col-md-4 col-12">
+                                            <label class="form-label small fw-bold text-uppercase text-white">Type</label>
+                                            <select name="type" class="form-select bg-dark text-white border-secondary">
+                                                <option value="IN" {{ 'selected' if e.type == 'IN' }}>IN (Receiving)</option>
+                                                <option value="OUT" {{ 'selected' if e.type == 'OUT' }}>OUT (Dispatch)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row g-3 mt-2">
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold text-uppercase text-white">Material Brand</label>
+                                            <select name="material" class="form-select bg-dark text-white border-secondary" required>
+                                                {% for mat in materials %}
+                                                <option value="{{ mat.name }}" {{ 'selected' if e.material == mat.name }}>{{ mat.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold text-uppercase text-white">Client</label>
+                                            <input type="text" name="client" value="{{ e.client or '' }}" class="form-control bg-dark text-white border-secondary">
+                                        </div>
+                                    </div>
+                                    <div class="row g-3 mt-2">
+                                        <div class="col-md-4 col-6">
+                                            <label class="form-label small fw-bold text-uppercase text-white">Quantity</label>
+                                            <input type="number" name="qty" value="{{ e.qty|int }}" class="form-control bg-dark text-white border-secondary fs-5 fw-bold" required>
+                                        </div>
+                                        <div class="col-md-4 col-6">
+                                            <label class="form-label small fw-bold text-uppercase text-white">Bill No</label>
+                                            <input type="text" name="bill_no" value="{{ e.bill_no or '' }}" class="form-control bg-dark text-white border-secondary">
+                                        </div>
+                                        <div class="col-md-4 col-12">
+                                            <label class="form-label small fw-bold text-uppercase text-white">Nimbus No</label>
+                                            <input type="text" name="nimbus_no" value="{{ e.nimbus_no or '' }}" class="form-control bg-dark text-white border-secondary">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-0 pt-0 d-flex {{ 'justify-content-between' if current_user.role == 'admin' else 'justify-content-end' }}">
+                                    {% if current_user.role == 'admin' %}
+                                    <a href="/delete_entry/{{ e.id }}" class="btn btn-outline-danger px-4 fw-bold rounded-pill" onclick="return confirm('Delete?')">Delete</a>
+                                    {% endif %}
+                                    <button type="submit" class="btn btn-warning px-5 fw-bold rounded-pill text-dark">Update</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if not entries %}
+                <tr><td colspan="9" class="text-center py-4 text-white-50">No transactions for this date.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    {% if pagination %}
+    <div class="card-footer bg-transparent border-0 py-3">
+        <nav>
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                {% if pagination.has_prev %}
+                <li class="page-item"><a class="page-link bg-dark border-secondary text-warning" href="{{ url_for('inventory.daily_transactions', date=sel_date, page=pagination.prev_num) }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link bg-warning border-warning text-dark">{{ pagination.page }}</span></li>
+                {% if pagination.has_next %}
+                <li class="page-item"><a class="page-link bg-dark border-secondary text-warning" href="{{ url_for('inventory.daily_transactions', date=sel_date, page=pagination.next_num) }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

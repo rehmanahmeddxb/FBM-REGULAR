@@ -1,0 +1,93 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-white mb-0">System <span class="text-warning">Dashboard</span></h2>
+        <p class="text-white-50 mb-0">{{ today_date }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/receiving" class="btn btn-success fw-bold px-4 rounded-pill shadow-sm"><i class="bi bi-plus-circle me-2"></i>Stock IN</a>
+        <a href="/dispatching" class="btn btn-info text-dark fw-bold px-4 rounded-pill shadow-sm"><i class="bi bi-dash-circle me-2"></i>Stock OUT</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #475569 !important; border-radius: 15px;">
+            <div class="card-body p-4 text-center">
+                <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                    <i class="bi bi-box-seam text-warning fs-2"></i>
+                </div>
+                <h6 class="text-white-50 fw-bold text-uppercase small mb-1">Total Inventory</h6>
+                <h1 class="display-5 fw-bold text-white mb-0">{{ total_stock }}</h1>
+                <p class="text-warning small fw-bold">Bags Currently in Stock</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px;">
+            <div class="card-body p-4 text-center">
+                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                    <i class="bi bi-people text-primary fs-2"></i>
+                </div>
+                <h6 class="text-white-50 fw-bold text-uppercase small mb-1">Registered Clients</h6>
+                <h1 class="display-5 fw-bold text-white mb-0">{{ client_count }}</h1>
+                <p class="text-primary small fw-bold">Active Customer Base</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px;">
+            <div class="card-body p-4">
+                <h6 class="text-white-50 fw-bold text-uppercase small mb-3">Quick Actions</h6>
+                <div class="d-grid gap-2">
+                    {% if current_user.can_view_stock or current_user.role == 'admin' %}
+                    <a href="/stock_summary" class="btn btn-outline-light border-2 fw-bold text-start ps-3"><i class="bi bi-graph-up me-2 text-warning"></i>Stock Summary</a>
+                    {% endif %}
+                    {% if current_user.can_view_daily or current_user.role == 'admin' %}
+                    <a href="/daily_transactions" class="btn btn-outline-light border-2 fw-bold text-start ps-3"><i class="bi bi-list-check me-2 text-info"></i>Daily Breakdown</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm h-100" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px;">
+            <div class="card-header bg-transparent border-secondary p-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-white mb-0"><i class="bi bi-tags me-2 text-warning"></i>Current Stock by Brand</h5>
+                <a href="/materials" class="btn btn-sm btn-outline-warning border-2 fw-bold px-3">Manage Brands</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle mb-0">
+                    <thead style="background: #0f172a;">
+                        <tr>
+                            <th class="ps-4 py-3 text-white-50">Brand Name</th>
+                            <th class="py-3 text-center text-white-50">In (Total)</th>
+                            <th class="py-3 text-center text-white-50">Out (Total)</th>
+                            <th class="py-3 text-end pe-4 text-white-50">Current Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody style="background: #1e293b;">
+                        {% for s in stats %}
+                        <tr style="border-bottom: 1px solid #334155; background: #1e293b;">
+                            <td class="ps-4 py-3 fw-bold fs-5 text-white">{{ s.name }}</td>
+                            <td class="text-center text-success small fw-bold">+{{ s.in|int }}</td>
+                            <td class="text-center text-info small fw-bold">-{{ s.out|int }}</td>
+                            <td class="text-end pe-4">
+                                <span class="h5 fw-bold text-warning">{{ s.stock|int }}</span>
+                                <span class="small text-white-50 ms-1">Bags</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

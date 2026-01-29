@@ -1,0 +1,91 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1 text-warning">Client Ledger: {{ client.name }}</h2>
+        <span class="badge bg-dark border border-secondary text-info">Client Code: {{ client.code or 'N/A' }}</span>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary d-print-none btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> Print Ledger</button>
+        <a href="{{ url_for('clients') }}" class="btn btn-outline-secondary btn-sm d-print-none">Back to Directory</a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-body">
+                <h6 class="text-white-50 small fw-bold text-uppercase mb-2">Total Outstanding Balance</h6>
+                <h3 class="{% if total_balance > 0 %}text-danger{% else %}text-success{% endif %} fw-bold mb-0">
+                    {{ "{:,.2f}".format(total_balance) }}
+                </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-body">
+                <h6 class="text-white-50 small fw-bold text-uppercase mb-2">Total Materials Delivered</h6>
+                <h3 class="text-info fw-bold mb-0">{{ total_delivered|int }} Bags</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Unified Ledger -->
+<div class="card border-0 shadow-sm mb-5" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px; overflow: hidden;">
+    <div class="card-header border-bottom border-secondary py-3" style="background: #0f172a;">
+        <h5 class="mb-0 text-white fw-bold"><i class="bi bi-journal-text me-2"></i>Unified Transaction History</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle mb-0">
+            <thead>
+                <tr style="background: #020617;">
+                    <th class="ps-4">Date</th>
+                    <th>Description</th>
+                    <th>Bill #</th>
+                    <th class="text-end">Due (PKR)</th>
+                    <th class="text-end">Paid (PKR)</th>
+                    <th class="text-end">Qty (Bags)</th>
+                    <th class="text-end pe-4">Balance (PKR)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in history %}
+                <tr style="border-bottom: 1px solid #334155;">
+                    <td class="ps-4">{{ t.date }}</td>
+                    <td>
+                        <span class="badge {% if t.type == 'financial' %}bg-primary{% else %}bg-info text-dark{% endif %} small me-2">{{ t.type|upper }}</span>
+                        {{ t.item }}
+                    </td>
+                    <td>
+                        {% if t.bill_no and t.bill_no != '---' %}
+                        <a href="/view_bill/{{ t.bill_no }}" class="badge bg-dark border border-secondary text-warning text-decoration-none">{{ t.bill_no }}</a>
+                        {% else %}
+                        <span class="text-white-50 small">---</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end text-danger">{{ "{:,.2f}".format(t.due) if t.due > 0 else "-" }}</td>
+                    <td class="text-end text-success">{{ "{:,.2f}".format(t.paid) if t.paid > 0 else "-" }}</td>
+                    <td class="text-end text-info fw-bold">{{ t.qty|int if t.qty > 0 else "-" }}</td>
+                    <td class="text-end fw-bold pe-4">{{ "{:,.2f}".format(t.balance) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if not history %}
+        <div class="p-5 text-center text-white-50">No transactions found for this client.</div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+@media print {
+    .main-content { margin-left: 0 !important; padding: 0 !important; }
+    .sidebar, .navbar, .d-print-none { display: none !important; }
+    .card { border: 1px solid #ddd !important; box-shadow: none !important; }
+    body { background: white !important; color: black !important; }
+}
+</style>
+{% endblock %}

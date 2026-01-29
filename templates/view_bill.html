@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card shadow-sm mx-auto" style="max-width: 800px;">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Bill Detail: {{ bill.auto_bill_no }}</h5>
+        <a href="/download_invoice/{{ bill.auto_bill_no|replace('#', '%23') }}" class="btn btn-light btn-sm">
+            <i class="bi bi-file-earmark-pdf"></i> Download PDF
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-6">
+                <p class="mb-1 text-muted">{% if bill.supplier is defined %}Supplier:{% else %}Client:{% endif %}</p>
+                <h5 class="fw-bold">{{ bill.supplier if bill.supplier is defined else bill.client_name }}</h5>
+                <p class="mb-0 text-muted">Type: <span class="badge bg-info text-dark">{{ type }}</span></p>
+            </div>
+            <div class="col-6 text-end">
+                <p class="mb-1 text-muted">Date:</p>
+                <p class="fw-bold">{{ bill.date_posted.strftime('%d-%m-%Y %H:%M') if (bill.date_posted is defined and bill.date_posted) else '-' }}</p>
+                {% if bill.manual_bill_no %}
+                <p class="mb-0 text-muted">Manual Bill: <strong>{{ bill.manual_bill_no }}</strong></p>
+                {% endif %}
+            </div>
+        </div>
+
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Description</th>
+                    <th class="text-end">Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td class="text-end">{{ item.qty }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% if type != 'Delivery' %}
+            <tfoot>
+                <tr>
+                    <th class="text-end">Total Amount:</th>
+                    <th class="text-end">{{ currency_symbol }}{{ "{:,.2f}".format(bill.amount) if bill.amount is defined else '0.00' }}</th>
+                </tr>
+                {% if type in ['Booking', 'Sale'] %}
+                <tr>
+                    <th class="text-end">Paid Amount:</th>
+                    <th class="text-end text-success">{{ currency_symbol }}{{ "{:,.2f}".format(bill.paid_amount) }}</th>
+                </tr>
+                <tr>
+                    <th class="text-end">Balance:</th>
+                    <th class="text-end text-danger">{{ currency_symbol }}{{ "{:,.2f}".format(bill.amount - bill.paid_amount) }}</th>
+                </tr>
+                {% endif %}
+            </tfoot>
+            {% endif %}
+        </table>
+
+        {% if bill.photo_path %}
+        <div class="mt-4 text-center">
+            <p class="text-muted small">Attached Photo:</p>
+            <img src="/static/uploads/{{ bill.photo_path }}" class="img-fluid rounded border shadow-sm" style="max-height: 400px;">
+        </div>
+        {% endif %}
+    </div>
+    <div class="card-footer bg-white text-center">
+        <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,266 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Bookings</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBookingModal">Add Booking</button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Auto Bill</th>
+                        <th>Client</th>
+                        <th>Material</th>
+                        <th>Qty</th>
+                        <th>Total Amount</th>
+                        <th>Actually Paid</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                    <tr>
+                        <td class="ps-3"><a href="/view_bill/{{ booking.auto_bill_no|replace('#', '%23') }}" class="badge bg-primary text-decoration-none">{{ booking.auto_bill_no }}</a></td>
+                        <td>{{ booking.client_name }}</td>
+                        <td>
+                            {% if booking.items %}
+                                {{ booking.items[0].material_name }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if booking.items %}
+                                {{ booking.items[0].qty }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </td>
+                        <td>{{ currency_symbol }}{{ "%.2f"|format(booking.amount) }}</td>
+                        <td><span class="text-success">{{ currency_symbol }}{{ "%.2f"|format(booking.paid_amount) }}</span></td>
+                        <td class="text-center">
+                            <div class="btn-group">
+                                <a href="/view_bill/{{ booking.auto_bill_no|replace('#', '%23') }}" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+                                <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editBookingModal{{ booking.id }}" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <a href="/delete_bill/Booking/{{ booking.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete booking?')"><i class="bi bi-trash"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addBookingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" action="/add_booking" method="POST" enctype="multipart/form-data">
+            <div class="modal-header">
+                <h5 class="modal-title">New Booking (Auto No: {{ next_auto }})</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Client Name</label>
+                    <select name="client_name" class="form-select select2-searchable" required>
+                        {% for client in clients %}
+                        <option value="{{ client.name }}">{{ client.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div id="items-container">
+                    <div class="compact-item-row">
+                        <div class="item-select">
+                            <select name="material_name[]" class="form-select price-trigger" required>
+                                <option value="">Material</option>
+                                {% for mat in materials %}
+                                <option value="{{ mat.name }}" data-price="{{ mat.unit_price }}">{{ mat.name }} ({{ currency_symbol }}{{ mat.unit_price }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="qty-group">
+                            <button type="button" onclick="changeQty(this, -1)">-</button>
+                            <input type="number" step="0.01" name="qty[]" value="1.00" class="qty-input" required>
+                            <button type="button" onclick="changeQty(this, 1)">+</button>
+                        </div>
+                        <div class="rate-input-group">
+                            <input type="number" step="0.01" name="unit_rate[]" class="form-control rate-input" placeholder="Rate" required>
+                        </div>
+                        <div class="remove-btn" onclick="this.closest('.compact-item-row').remove(); updatePrice(this.closest('form'));">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="addItemRow()">+ Add More Items</button>
+                <div class="mb-3">
+                    <label class="form-label">Total Booking Amount</label>
+                    <input type="number" step="0.01" name="amount" class="form-control total-amount" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Actually Paid Now</label>
+                    <input type="number" step="0.01" name="paid_amount" class="form-control" value="0">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Manual Bill Number</label>
+                    <input type="text" name="manual_bill_no" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Upload Manual Bill Photo</label>
+                    <input type="file" name="photo" class="form-control" accept="image/*">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Save Booking</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% for booking in bookings %}
+<div class="modal fade" id="editBookingModal{{ booking.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" action="/edit_bill/Booking/{{ booking.id }}" method="POST" enctype="multipart/form-data">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Booking: {{ booking.auto_bill_no }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-start">
+                <div class="mb-3">
+                    <label class="form-label">Client Name</label>
+                    <select name="client_name" class="form-select" required>
+                        {% for c in clients %}
+                        <option value="{{ c.name }}" {% if c.name == booking.client_name %}selected{% endif %}>{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="items-container-edit">
+                    {% for item in booking.items %}
+                    <div class="compact-item-row">
+                        <div class="item-select">
+                            <select name="material_name[]" class="form-select price-trigger" required>
+                                {% for mat in materials %}
+                                <option value="{{ mat.name }}" data-price="{{ mat.unit_price }}" {% if mat.name == item.material_name %}selected{% endif %}>{{ mat.name }} ({{ currency_symbol }}{{ mat.unit_price }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="qty-group">
+                            <button type="button" onclick="changeQty(this, -1)">-</button>
+                            <input type="number" step="0.01" name="qty[]" value="{{ "%.2f"|format(item.qty) }}" class="qty-input" required>
+                            <button type="button" onclick="changeQty(this, 1)">+</button>
+                        </div>
+                        <div class="rate-input-group">
+                            <input type="number" step="0.01" name="unit_rate[]" class="form-control rate-input" value="{{ item.price_at_time }}" required>
+                        </div>
+                        <div class="remove-btn" onclick="this.closest('.compact-item-row').remove(); updatePrice(this.closest('form'));">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="addItemRowEdit(this)">+ Add More Items</button>
+
+                <div class="mb-3">
+                    <label class="form-label">Total Amount ({{ currency_symbol }})</label>
+                    <input type="number" step="0.01" name="amount" class="form-control total-amount" value="{{ booking.amount }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Actually Paid ({{ currency_symbol }})</label>
+                    <input type="number" step="0.01" name="paid_amount" class="form-control" value="{{ booking.paid_amount }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Manual Bill Number</label>
+                    <input type="text" name="manual_bill_no" class="form-control" value="{{ booking.manual_bill_no }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Update Bill Photo</label>
+                    <input type="file" name="photo" class="form-control" accept="image/*">
+                    {% if booking.photo_path %}
+                    <div class="mt-2 small text-muted">Current: <a href="{{ url_for('static', filename='uploads/' + booking.photo_path) }}" target="_blank">View</a></div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+function changeQty(btn, delta) {
+    const input = btn.parentElement.querySelector('input');
+    let val = parseFloat(input.value) || 0;
+    val = Math.max(0, val + delta);
+    input.value = val.toFixed(2);
+    updatePrice(btn.closest('form'));
+}
+
+function addItemRow() {
+    const container = document.getElementById('items-container');
+    const firstRow = container.querySelector('.compact-item-row');
+    const newRow = firstRow.cloneNode(true);
+    newRow.querySelectorAll('input').forEach(i => {
+        if(i.classList.contains('qty-input')) { i.value = '1.00'; }
+        else { i.value = ''; }
+    });
+    newRow.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+    container.appendChild(newRow);
+    attachListeners(newRow);
+}
+
+function addItemRowEdit(btn) {
+    const container = btn.previousElementSibling;
+    const firstRow = document.querySelector('#items-container .compact-item-row');
+    const newRow = firstRow.cloneNode(true);
+    
+    newRow.querySelectorAll('input').forEach(i => {
+        if(i.classList.contains('qty-input')) { i.value = '1.00'; }
+        else { i.value = ''; }
+    });
+    newRow.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+    container.appendChild(newRow);
+    attachListeners(newRow);
+}
+
+function attachListeners(row) {
+    const select = row.querySelector('.price-trigger');
+    const rateInput = row.querySelector('.rate-input');
+    const qtyInput = row.querySelector('.qty-input');
+    
+    select.addEventListener('change', () => {
+        const option = select.options[select.selectedIndex];
+        const price = option.getAttribute('data-price') || 0;
+        rateInput.value = price;
+        updatePrice(row.closest('form'));
+    });
+
+    [rateInput, qtyInput].forEach(el => {
+        el.addEventListener('input', () => updatePrice(row.closest('form')));
+    });
+}
+
+function updatePrice(form) {
+    let total = 0;
+    form.querySelectorAll('.compact-item-row').forEach(row => {
+        const rateInput = row.querySelector('.rate-input');
+        const qtyInput = row.querySelector('.qty-input');
+        const price = parseFloat(rateInput.value) || 0;
+        const qty = parseFloat(qtyInput.value) || 0;
+        total += price * qty;
+    });
+    form.querySelector('.total-amount').value = total.toFixed(2);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.compact-item-row').forEach(row => attachListeners(row));
+});
+</script>
+{% endblock %}
