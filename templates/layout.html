@@ -223,8 +223,8 @@
                 <a href="/direct_sales" class="nav-link {{ 'active' if request.path == '/direct_sales' }}" onclick="closeSidebar()">
                     <i class="bi bi-cart-check"></i> Direct Sales
                 </a>
-                <a href="/ledger" class="nav-link {{ 'active' if request.path.startswith('/ledger') }}" onclick="closeSidebar()">
-                    <i class="bi bi-journal-text"></i> Client Ledgers
+                <a href="/clients" class="nav-link {{ 'active' if request.path.startswith('/ledger') or request.path == '/clients' }}" onclick="closeSidebar()">
+                    <i class="bi bi-journal-text"></i> Client Ledger
                 </a>
                 {% endif %}
 
@@ -242,9 +242,6 @@
                 <div class="text-white-50 small fw-bold px-4 mt-4 mb-2 text-uppercase" style="font-size: 0.7rem;">Directory</div>
                 <a href="/materials" class="nav-link {{ 'active' if request.path == '/materials' }}" onclick="closeSidebar()">
                     <i class="bi bi-tags"></i> Material Brands
-                </a>
-                <a href="/clients" class="nav-link {{ 'active' if request.path == '/clients' }}" onclick="closeSidebar()">
-                    <i class="bi bi-person-badge"></i> Clients List
                 </a>
                 {% endif %}
 

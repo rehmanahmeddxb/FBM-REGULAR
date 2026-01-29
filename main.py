@@ -482,6 +482,12 @@ def financial_ledger(client_id):
                            deliveries=deliveries)
 
 
+@app.route('/financial_ledger/<int:client_id>')
+@login_required
+def financial_ledger_details(client_id):
+    return redirect(url_for('financial_ledger', client_id=client_id))
+
+
 @app.route('/material_ledger/<int:mat_id>')
 @login_required
 def material_ledger_page(mat_id):
