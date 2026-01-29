@@ -466,108 +466,20 @@ def ledger_page():
 @login_required
 def financial_ledger(client_id):
     client = Client.query.get_or_404(client_id)
-    bookings = []
-    sales = []
-    payments = []
     
-    # Check if models exist before querying
-    try:
-        bookings = Booking.query.filter_by(client_name=client.name).all()
-        sales = DirectSale.query.filter_by(client_name=client.name).all()
-        payments = Payment.query.filter_by(client_name=client.name).all()
-    except Exception as e:
-        print(f"Error querying financial models: {e}")
-    deliveries = Entry.query.filter_by(client=client.name, type='OUT').all()
-
-    all_history = []
-    # Financial transactions
-    for b in bookings:
-        items_desc = ", ".join([f"{i.material_name} ({i.qty})" for i in b.items])
-        all_history.append({
-            'date': b.date_posted,
-            'item': f"BOOKING: {items_desc}",
-            'bill_no': b.auto_bill_no,
-            'due': b.amount,
-            'paid': b.paid_amount,
-            'qty': 0,
-            'type': 'financial'
-        })
-    for s in sales:
-        items_desc = ", ".join([f"{i.product_name} ({i.qty})" for i in s.items])
-        all_history.append({
-            'date': s.date_posted,
-            'item': f"SALE: {items_desc}",
-            'bill_no': s.auto_bill_no,
-            'due': s.amount,
-            'paid': s.paid_amount,
-            'qty': 0,
-            'type': 'financial'
-        })
-    for p in payments:
-        all_history.append({
-            'date': p.date_posted,
-            'item': f"PAYMENT ({p.method})",
-            'bill_no': p.auto_bill_no,
-            'due': 0,
-            'paid': p.amount,
-            'qty': 0,
-            'type': 'financial'
-        })
-    # Material deliveries
-    for d in deliveries:
-        try:
-            d_date = datetime.strptime(d.date, '%Y-%m-%d')
-        except:
-            d_date = datetime.now()
-        all_history.append({
-            'date': d_date,
-            'item': f"DELIVERY: {d.material}",
-            'bill_no': d.bill_no or '---',
-            'due': 0,
-            'paid': 0,
-            'qty': d.qty,
-            'type': 'material'
-        })
-
-    all_history.sort(key=lambda x: x['date'])
-
-    # Calculate stats
-    history = []
-    balance = 0
-    total_delivered = 0
-    for t in all_history:
-        balance += (t['due'] - t['paid'])
-        total_delivered += t['qty']
-        
-        # Format date if it's a datetime object or string
-        formatted_date = t['date']
-        if isinstance(formatted_date, datetime):
-            formatted_date = formatted_date.strftime('%d-%m-%Y')
-        elif isinstance(formatted_date, str):
-            try:
-                # Handle cases where it's already a string but might need formatting
-                # Entry dates are usually %Y-%m-%d
-                parsed_date = datetime.strptime(formatted_date, '%Y-%m-%d')
-                formatted_date = parsed_date.strftime('%d-%m-%Y')
-            except ValueError:
-                pass
-            
-        history.append({
-            'date': formatted_date,
-            'item': t['item'],
-            'bill_no': t['bill_no'],
-            'due': t['due'],
-            'paid': t['paid'],
-            'qty': t['qty'],
-            'balance': balance,
-            'type': t['type']
-        })
+    # 1. Fetch Pending Bills from PendingBill table matching client_code
+    pending_bills = PendingBill.query.filter_by(client_code=client.code).order_by(PendingBill.id.desc()).all()
+    
+    # 2. Fetch Dispatching Entries from Entry table matching client_code or name
+    deliveries = Entry.query.filter(
+        (Entry.client_code == client.code) | (Entry.client == client.name),
+        Entry.type == 'OUT'
+    ).order_by(Entry.date.desc(), Entry.time.desc()).all()
 
     return render_template('client_ledger.html',
                            client=client,
-                           history=history,
-                           total_balance=balance,
-                           total_delivered=total_delivered)
+                           pending_bills=pending_bills,
+                           deliveries=deliveries)
 
 
 @app.route('/material_ledger/<int:mat_id>')
