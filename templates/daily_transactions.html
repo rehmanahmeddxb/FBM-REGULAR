@@ -7,8 +7,36 @@
     </div>
     <div class="bg-dark border border-secondary rounded p-2 d-flex align-items-center shadow-sm">
         <i class="bi bi-calendar3 me-2 text-warning"></i>
-        <input type="date" value="{{ sel_date }}" class="border-0 fw-bold text-white bg-transparent" style="outline: none; min-width: 130px;" onchange="location.href='?date='+this.value">
+        <input type="date" id="dateFrom" value="{{ date_from or sel_date }}" class="border-0 fw-bold text-white bg-transparent" style="outline: none; min-width: 130px;">
+        <span class="mx-2 text-white-50">to</span>
+        <input type="date" id="dateTo" value="{{ date_to or sel_date }}" class="border-0 fw-bold text-white bg-transparent" style="outline: none; min-width: 130px;">
+        <select id="categoryFilter" class="form-select form-select-sm bg-dark text-white border-secondary ms-2">
+            <option value="">All Categories</option>
+            <option value="Cash" {{ 'selected' if category_filter == 'Cash' }}>Cash (Unbilled)</option>
+            <option value="Credit Customer" {{ 'selected' if category_filter == 'Credit Customer' }}>Credit Sales</option>
+            <option value="Booking Customer" {{ 'selected' if category_filter == 'Booking Customer' }}>Booking Sales</option>
+            {% for cat in categories %}
+            {% if cat not in ['Cash', 'Credit Customer', 'Booking Customer'] %}
+            <option value="{{ cat }}" {{ 'selected' if cat == category_filter }}>{{ cat }}</option>
+            {% endif %}
+            {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-warning ms-2 " onclick="applyDateFilter()">Apply</button>
+        <a href="/" class="btn btn-outline-light btn-sm fw-bold ms-2"><i class="bi bi-arrow-left me-1"></i> Back</a>
     </div>
+
+    <script>
+    function applyDateFilter(){
+        const from = document.getElementById('dateFrom').value;
+        const to = document.getElementById('dateTo').value;
+        const cat = document.getElementById('categoryFilter').value;
+        const params = new URLSearchParams();
+        if (from) params.set('date_from', from);
+        if (to) params.set('date_to', to);
+        if (cat) params.set('category', cat);
+        location.href = '/inventory/daily_transactions?'+params.toString();
+    }
+    </script>
 </div>
 
 <div class="card bg-dark border-secondary mb-4 overflow-hidden" style="border-radius: 12px; border: 2px solid #334155;">
@@ -29,12 +57,16 @@
             </thead>
             <tbody>
                 {% for e in entries %}
-                <tr style="border-bottom: 1px solid #334155;">
+                <tr style="border-bottom: 1px solid #334155; {% if e.is_void %}opacity: 0.5; text-decoration: line-through;{% endif %}">
                     <td class="ps-3 text-white-50">{{ e.time }}</td>
                     <td>
+                        {% if e.is_void %}
+                        <span class="badge bg-danger text-white px-2 py-1 rounded-pill fw-bold me-1">VOID</span>
+                        {% else %}
                         <span class="badge {{ 'bg-success' if e.type == 'IN' else 'bg-info text-dark' }} px-3 py-2 rounded-pill fw-bold">
                             {{ e.type }}
                         </span>
+                        {% endif %}
                     </td>
                     <td class="fw-bold text-white">{{ e.client or '---' }} <br><small class="text-white-50">{{ e.client_code or '' }}</small></td>
                     <td class="text-warning fw-bold">{{ e.material }}</td>
@@ -42,7 +74,11 @@
                         {{ '+' if e.type == 'IN' else '-' }}{{ e.qty|int }}
                     </td>
                     <td class="text-white-50">
-                        {{ e.bill_no or '---' }}
+                        {% if e.bill_no %}
+                        <a href="{{ url_for('view_bill', bill_no=e.bill_no|replace('#', '%23')) }}" class="text-warning text-decoration-none">{{ e.bill_no }}</a>
+                        {% else %}
+                        ---
+                        {% endif %}
                         {% if e.bill_no and pending_photos.get(e.bill_no) %}
                         <a href="{{ pending_photos.get(e.bill_no) }}" target="_blank" class="ms-1 text-warning" title="View Bill Photo">
                             <i class="bi bi-image"></i>
@@ -52,12 +88,20 @@
                     <td class="text-white-50">{{ e.nimbus_no or '---' }}</td>
                     <td class="text-info small fw-bold">{{ e.created_by or 'System' }}</td>
                     <td class="text-end pe-3">
-                        {% if current_user.role == 'admin' or e.date == sel_date %}
+                        {% if not e.is_void %}
+                            {% if current_user.role == 'admin' or e.date == sel_date %}
                         <button class="btn btn-warning btn-sm text-dark fw-bold rounded-pill" data-bs-toggle="modal" data-bs-target="#editLog{{ e.id }}">
                             Edit
                         </button>
-                        {% else %}
+                            {% else %}
                         <span class="badge bg-secondary opacity-50"><i class="bi bi-lock"></i> Locked</span>
+                            {% endif %}
+                            {% if current_user.role == 'admin' %}
+                            <button class="btn btn-outline-danger btn-sm fw-bold rounded-pill ms-1" onclick="if(confirm('VOID this transaction? Stock will be reversed.')) { document.getElementById('voidForm{{ e.id }}').submit(); }">Void</button>
+                            <form id="voidForm{{ e.id }}" action="/void_transaction/Entry/{{ e.id }}" method="POST" style="display:none;"></form>
+                            {% endif %}
+                        {% else %}
+                        <span class="badge bg-danger">VOIDED</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -141,11 +185,11 @@
         <nav>
             <ul class="pagination pagination-sm justify-content-center mb-0">
                 {% if pagination.has_prev %}
-                <li class="page-item"><a class="page-link bg-dark border-secondary text-warning" href="{{ url_for('inventory.daily_transactions', date=sel_date, page=pagination.prev_num) }}">Previous</a></li>
+                <li class="page-item"><a class="page-link bg-dark border-secondary text-warning" href="{{ url_for('inventory.daily_transactions', date_from=date_from, date_to=date_to, category=category_filter, page=pagination.prev_num) }}">Previous</a></li>
                 {% endif %}
                 <li class="page-item active"><span class="page-link bg-warning border-warning text-dark">{{ pagination.page }}</span></li>
                 {% if pagination.has_next %}
-                <li class="page-item"><a class="page-link bg-dark border-secondary text-warning" href="{{ url_for('inventory.daily_transactions', date=sel_date, page=pagination.next_num) }}">Next</a></li>
+                <li class="page-item"><a class="page-link bg-dark border-secondary text-warning" href="{{ url_for('inventory.daily_transactions', date_from=date_from, date_to=date_to, category=category_filter, page=pagination.next_num) }}">Next</a></li>
                 {% endif %}
             </ul>
         </nav>

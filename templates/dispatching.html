@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="mb-4">
-    <h2 class="fw-bold text-info"><i class="bi bi-dash-circle me-2"></i>Stock Dispatch</h2>
-    <p class="text-white-50">Log material leaving the warehouse for clients.</p>
+    <h2 class="fw-bold text-info"><i class="bi bi-truck me-2"></i>Booking Delivery (Dispatch)</h2>
+    <p class="text-white-50">Dispatch stock against existing client bookings.</p>
 </div>
 
 <div class="row justify-content-center">
@@ -51,13 +51,37 @@
                         </div>
                         <div class="col-md-6">
                             <label class="small fw-bold text-white-50 text-uppercase mb-2">Bill / Invoice No.</label>
-                            <input type="text" name="bill_no" class="form-control bg-dark text-white border-secondary py-3 fs-5" placeholder="Optional">
+                            <div class="input-group">
+                                <input type="text" name="bill_no" id="dispatchBillNo" class="form-control bg-dark text-white border-secondary py-3 fs-5" placeholder="Optional">
+                                <span class="input-group-text bg-dark border-secondary">
+                                    <div class="form-check form-check-inline mb-0 ms-2">
+                                        <input class="form-check-input" type="checkbox" id="hasBillDispatch" name="has_bill" checked>
+                                        <label class="form-check-label text-white-50 small mb-0" for="hasBillDispatch">Has Bill</label>
+                                    </div>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="createInvoice" name="create_invoice" value="1">
+                            <label class="form-check-label text-warning fw-bold" for="createInvoice">Create Invoice</label>
+                        </div>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="trackAsCash" name="track_as_cash">
+                            <label class="form-check-label text-warning fw-bold" for="trackAsCash">Record as Cash Delivery (Track in Pending Bills)</label>
                         </div>
                     </div>
 
                     <div class="mb-4">
                         <label class="small fw-bold text-white-50 text-uppercase mb-2">Nimbus Number</label>
                         <input type="text" name="nimbus_no" class="form-control bg-dark text-white border-secondary py-3 fs-5" placeholder="Optional reference">
+                    </div>
+
+                    <div class="d-flex gap-2 mb-3">
+                        <a href="/tracking?type=OUT&has_bill=1" class="btn btn-outline-info btn-sm">View Billed Dispatches</a>
+                        <a href="/tracking?type=OUT&has_bill=0" class="btn btn-outline-warning btn-sm">View Cash Dispatches</a>
                     </div>
 
                     <div class="p-3 bg-dark rounded border border-secondary mb-4">
@@ -67,9 +91,10 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-info text-dark w-100 py-3 rounded-pill fw-bold shadow">
-                        <i class="bi bi-send-check me-2"></i> Confirm Dispatch
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button type="reset" class="btn btn-outline-secondary w-50 py-3 rounded-pill fw-bold">Reset</button>
+                        <button type="submit" class="btn btn-info text-dark w-50 py-3 rounded-pill fw-bold shadow"><i class="bi bi-send-check me-2"></i> Confirm</button>
+                    </div>
                     <a href="/" class="btn btn-link w-100 text-white-50 text-decoration-none mt-2 small">Cancel and Return</a>
                 </form>
             </div>
@@ -81,5 +106,26 @@
     document.getElementById('current_date_dispatch').innerText = new Date().toLocaleDateString('en-US', { 
         month: 'long', day: 'numeric', year: 'numeric' 
     });
+
+    // Toggle bill input based on 'Has Bill' checkbox
+    const hasBillDispatch = document.getElementById('hasBillDispatch');
+    const dispatchBillNo = document.getElementById('dispatchBillNo');
+    const createInvoiceChk = document.getElementById('createInvoice');
+    if (hasBillDispatch && dispatchBillNo) {
+        const setState = () => {
+            if (hasBillDispatch.checked) {
+                dispatchBillNo.readOnly = false;
+                if (createInvoiceChk) createInvoiceChk.disabled = false;
+                dispatchBillNo.classList.remove('text-muted');
+            } else {
+                dispatchBillNo.value = '';
+                dispatchBillNo.readOnly = true;
+                if (createInvoiceChk) { createInvoiceChk.checked = false; createInvoiceChk.disabled = true; }
+                dispatchBillNo.classList.add('text-muted');
+            }
+        }
+        setState();
+        hasBillDispatch.addEventListener('change', setState);
+    }
 </script>
 {% endblock %}

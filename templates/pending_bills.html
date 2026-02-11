@@ -31,6 +31,7 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <h2 class="fw-bold text-warning mb-0"><i class="bi bi-receipt me-2"></i>Pending Bills</h2>
     <div class="d-flex gap-2 flex-wrap">
+        <a href="/" class="btn btn-outline-light btn-sm fw-bold"><i class="bi bi-arrow-left me-1"></i> Back</a>
         <button class="btn btn-warning btn-sm text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#addBillModal">
             <i class="bi bi-plus-lg"></i> Add Bill
         </button>
@@ -45,13 +46,33 @@
 
 <div class="card-custom mb-4" style="background: #1e293b;">
     <form method="GET" action="{{ url_for('pending_bills') }}" class="row g-2 align-items-end">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label class="text-white-50 small fw-bold mb-1">CLIENT CODE</label>
             <input type="text" name="client_code" list="clientsList" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Type Client Code..." value="{{ filters.client_code or '' }}" autocomplete="off">
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label class="text-white-50 small fw-bold mb-1">BILL NO</label>
             <input type="text" name="bill_no" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Type Bill No..." value="{{ filters.bill_no or '' }}" autocomplete="off">
+        </div>
+        <div class="col-md-3">
+            <label class="text-white-50 small fw-bold mb-1">BILL TYPE</label>
+            <select name="is_manual" class="form-select form-select-sm bg-dark text-white border-secondary">
+                <option value="">All Types</option>
+                <option value="1" {% if filters.is_manual == '1' %}selected{% endif %}>Manual Bill No</option>
+                <option value="0" {% if filters.is_manual == '0' %}selected{% endif %}>System/Auto Bill</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="text-white-50 small fw-bold mb-1">CATEGORY</label>
+            <select name="category" class="form-select form-select-sm bg-dark text-white border-secondary">
+                <option value="">All Categories</option>
+                <option value="Cash" {% if filters.category == 'Cash' %}selected{% endif %}>Cash (Unbilled)</option>
+                <option value="Credit Customer" {% if filters.category == 'Credit Customer' %}selected{% endif %}>Credit Sales</option>
+                <option value="Booking Customer" {% if filters.category == 'Booking Customer' %}selected{% endif %}>Booking Sales</option>
+                <option value="General" {% if filters.category == 'General' %}selected{% endif %}>General</option>
+                <option value="Walking-Customer" {% if filters.category == 'Walking-Customer' %}selected{% endif %}>Walking-Customer</option>
+                <option value="Misc" {% if filters.category == 'Misc' %}selected{% endif %}>Misc</option>
+            </select>
         </div>
         <div class="col-md-3">
             <label class="text-white-50 small fw-bold mb-1">BILL RANGE FROM</label>
@@ -60,15 +81,6 @@
         <div class="col-md-3">
             <label class="text-white-50 small fw-bold mb-1">BILL RANGE TO</label>
             <input type="number" name="bill_to" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="To..." value="{{ filters.bill_to or '' }}">
-        </div>
-        <div class="col-md-3">
-            <label class="text-white-50 small fw-bold mb-1">CATEGORY</label>
-            <select name="category" class="form-select form-select-sm bg-dark text-white border-secondary">
-                <option value="">All Categories</option>
-                <option value="General" {% if filters.category == 'General' %}selected{% endif %}>General</option>
-                <option value="Walking-Customer" {% if filters.category == 'Walking-Customer' %}selected{% endif %}>Walking-Customer</option>
-                <option value="Misc" {% if filters.category == 'Misc' %}selected{% endif %}>Misc</option>
-            </select>
         </div>
         <div class="col-md-2">
             <button type="submit" class="btn btn-outline-warning btn-sm w-100">Search</button>
@@ -82,7 +94,7 @@
             <thead style="background: #0f172a;">
                 <tr>
                     <th class="fw-bold py-3 ps-4 border-bottom border-secondary text-white-50">Client Code</th>
-                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Bill No</th>
+                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Manual Bill No</th>
                     <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Client Name</th>
                     <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Reason</th>
                     <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Amount</th>
@@ -97,12 +109,16 @@
                     <td class="ps-4 py-3">
                         <span class="badge bg-dark border border-secondary text-warning">{{ bill.client_code or '---' }}</span>
                     </td>
-                    <td class="text-white fw-bold">{{ bill.bill_no or '---' }}</td>
+                    <td class="text-white fw-bold">
+                        {% if bill.bill_no %}
+                        <a href="{{ url_for('view_bill', bill_no=bill.bill_no|replace('#', '%23')) }}" class="text-warning text-decoration-none">{{ bill.bill_no }}</a>
+                        {% else %}---{% endif %}
+                    </td>
                     <td class="text-white">{{ bill.client_name or '---' }}</td>
                     <td class="text-white-50 small">{{ bill.reason or '---' }}</td>
                     <td class="text-danger fw-bold">{{ "%.2f"|format(bill.amount or 0) }}</td>
                     <td>
-                        {% if client and client.category == 'Walking-Customer' %}
+                        {% if not client or client.category == 'Walking-Customer' or client.category == 'Cash' %}
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" role="switch" id="paidSwitch{{ bill.id }}" 
                                    {% if bill.is_paid %}checked{% endif %} 
@@ -175,7 +191,7 @@
                     <div class="col-6 mb-3">
                         <label class="text-white-50 small fw-bold mb-1 d-block">BILL NO</label>
                         <div class="p-2 bg-dark rounded border border-secondary">
-                            <a href="#" class="text-white text-decoration-none" onclick="checkBill('{{ bill.bill_no }}'); return false;">{{ bill.bill_no }}</a>
+                            <a href="{{ url_for('view_bill', bill_no=bill.bill_no|replace('#', '%23')) }}" class="text-warning text-decoration-none">{{ bill.bill_no }}</a>
                         </div>
                     </div>
                     <div class="col-6 mb-3">
@@ -373,8 +389,9 @@
                     <input type="url" name="photo_url" class="form-control bg-dark text-white border-secondary" placeholder="https://drive.google.com/...">
                 </div>
             </div>
-            <div class="modal-footer border-0">
-                <button type="submit" class="btn btn-warning text-dark fw-bold w-100 py-2 rounded-pill">Add Bill</button>
+            <div class="modal-footer border-0 d-flex gap-2">
+                <button type="reset" class="btn btn-outline-secondary flex-grow-1 py-2 rounded-pill fw-bold">Reset</button>
+                <button type="submit" class="btn btn-warning text-dark fw-bold flex-grow-1 py-2 rounded-pill">Add Bill</button>
             </div>
         </form>
     </div>

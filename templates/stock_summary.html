@@ -1,43 +1,49 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <div>
-        <h2 class="fw-bold text-warning">Stock Summary</h2>
-        <p class="text-light small mb-0">Opening, Receiving, Dispatching, and Closing balances.</p>
+        <h2 class="fw-bold text-warning mb-0"><i class="bi bi-graph-up me-2"></i>Stock Summary</h2>
+        <p class="text-white-50 small mb-0">Opening, Receiving, Dispatching, and Closing balances.</p>
     </div>
-    <div class="bg-dark border border-secondary rounded p-2 d-flex align-items-center shadow-sm">
-        <i class="bi bi-calendar3 me-2 text-warning"></i>
-        <input type="date" value="{{ sel_date }}" class="border-0 fw-bold text-white bg-transparent" style="outline: none; min-width: 130px;" onchange="location.href='?date='+this.value">
+    <div class="d-flex gap-2 align-items-center">
+        <div class="bg-dark border border-secondary rounded p-2 d-flex align-items-center shadow-sm">
+            <i class="bi bi-calendar3 me-2 text-warning"></i>
+            <input type="date" value="{{ sel_date }}" class="border-0 fw-bold text-white bg-transparent" style="outline: none; min-width: 130px;" onchange="location.href='?date='+this.value">
+        </div>
+        <a href="/" class="btn btn-outline-light btn-sm fw-bold"><i class="bi bi-arrow-left me-1"></i> Back</a>
+        <button class="btn btn-outline-success btn-sm fw-bold" onclick="window.print()">
+            <i class="bi bi-printer"></i>
+        </button>
     </div>
 </div>
 
-<div class="card shadow-sm mb-4 bg-dark overflow-hidden" style="border-radius: 12px; border: 2px solid #334155;">
+<div class="card border-0 shadow-sm mb-4" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px; overflow: hidden;">
     <div class="table-responsive">
-        <table class="table table-dark table-hover mb-0 align-middle text-center">
-            <thead class="small text-uppercase" style="background: #0f172a;">
-                <tr>
-                    <th class="ps-3 text-white-50 text-start">Material Brand</th>
-                    <th class="text-white-50">Opening</th>
-                    <th class="text-success">Stock In</th>
-                    <th class="text-info">Stock Out</th>
-                    <th class="text-warning">Closing</th>
-                    <th class="text-white-50" style="width: 120px;">Physical</th>
-                    <th class="text-end pe-3 text-white-50">Diff</th>
+        <table class="table table-dark table-hover align-middle mb-0 text-center">
+            <thead style="background: #0f172a;">
+                <tr class="small text-uppercase">
+                    <th class="ps-4 text-white-50 text-start py-3">Material Brand</th>
+                    <th class="text-white-50 py-3">Opening</th>
+                    <th class="text-success py-3">Stock In</th>
+                    <th class="text-info py-3">Stock Out</th>
+                    <th class="text-warning py-3">Closing</th>
+                    <th class="text-white-50 py-3" style="width: 140px;">Physical</th>
+                    <th class="text-end pe-4 text-white-50 py-3">Diff</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody style="background: #1e293b;">
                 {% for s in stats %}
                 <tr style="border-bottom: 1px solid #334155;">
-                    <td class="text-start ps-3 fw-bold text-warning fs-5">{{ s.name }}</td>
-                    <td class="text-white-50 fw-bold">{{ s.opening|int }}</td>
-                    <td class="text-success fw-bold fs-5">+{{ s.in|int }}</td>
-                    <td class="text-info fw-bold fs-5">-{{ s.out|int }}</td>
-                    <td class="fw-bold text-warning fs-5">{{ s.closing|int }}</td>
+                    <td class="text-start ps-4 fw-bold text-warning">{{ s.name }}</td>
+                    <td class="text-white-50">{{ s.opening|int }}</td>
+                    <td class="text-success fw-bold">+{{ s.in|int }}</td>
+                    <td class="text-info fw-bold">-{{ s.out|int }}</td>
+                    <td class="fw-bold text-warning">{{ s.closing|int }}</td>
                     <td>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary text-center fw-bold" 
                                placeholder="0" oninput="updateDiff(this, {{ s.closing }}, 'diff-{{ loop.index }}')">
                     </td>
-                    <td class="text-end pe-3 fw-bold fs-5" id="diff-{{ loop.index }}">--</td>
+                    <td class="text-end pe-4 fw-bold" id="diff-{{ loop.index }}">--</td>
                 </tr>
                 {% endfor %}
             </tbody>

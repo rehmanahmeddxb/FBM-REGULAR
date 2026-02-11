@@ -1,38 +1,45 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Payment Receive</h2>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPaymentModal">Add Payment</button>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <h2 class="fw-bold text-warning mb-0"><i class="bi bi-cash-stack me-2"></i>Receive Payment</h2>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="/" class="btn btn-outline-light btn-sm fw-bold"><i class="bi bi-arrow-left me-1"></i> Back</a>
+        <button class="btn btn-warning btn-sm text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+            <i class="bi bi-plus-lg"></i> Add Payment
+        </button>
+    </div>
 </div>
 
-<div class="card">
-    <div class="card-body">
-        <table class="table table-hover">
-            <thead>
+<div class="card border-0 shadow-sm" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px; overflow: hidden;">
+    <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle mb-0">
+            <thead style="background: #0f172a;">
                 <tr>
-                    <th>Auto Bill</th>
-                    <th>Manual Bill</th>
-                    <th>Client</th>
-                    <th>Amount</th>
-                    <th>Method</th>
-                    <th class="text-center">Actions</th>
+                    <th class="fw-bold py-3 ps-4 border-bottom border-secondary text-white-50">Manual Bill</th>
+                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Client</th>
+                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Amount</th>
+                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Method</th>
+                    <th class="fw-bold py-3 text-end pe-4 border-bottom border-secondary text-white-50">Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody style="background: #1e293b;">
                 {% for payment in payments %}
-                <tr>
-                    <td><a href="/view_bill/{{ payment.auto_bill_no }}" class="badge bg-primary text-decoration-none">{{ payment.auto_bill_no }}</a></td>
-                    <td>{{ payment.manual_bill_no }}</td>
-                    <td>{{ payment.client_name }}</td>
-                    <td>${{ "%.2f"|format(payment.amount) }}</td>
-                    <td>{{ payment.method }}</td>
-                    <td class="text-center">
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editPaymentModal{{ payment.id }}" title="Edit">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <a href="/delete_bill/Payment/{{ payment.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete payment?')"><i class="bi bi-trash"></i></a>
-                        </div>
+                <tr style="border-bottom: 1px solid #334155;">
+                    <td class="ps-4">
+                        {% if payment.manual_bill_no %}
+                        <a href="/view_bill/{{ payment.manual_bill_no }}" class="badge bg-dark border border-secondary text-warning text-decoration-none">{{ payment.manual_bill_no }}</a>
+                        {% else %}
+                        <span class="text-white-50 small">No Bill</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-white">{{ payment.client_name }}</td>
+                    <td class="text-success fw-bold">{{ currency_symbol }}{{ "%.2f"|format(payment.amount) }}</td>
+                    <td class="text-info">{{ payment.method }}</td>
+                    <td class="text-end pe-4">
+                        <button type="button" class="btn btn-outline-warning btn-sm border-2 rounded-pill shadow-sm me-1" data-bs-toggle="modal" data-bs-target="#editPaymentModal{{ payment.id }}" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <a href="/delete_bill/Payment/{{ payment.id }}" class="btn btn-outline-danger btn-sm border-2 rounded-pill shadow-sm" onclick="return confirm('Delete payment?')"><i class="bi bi-trash"></i></a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -43,43 +50,54 @@
 
 <div class="modal fade" id="addPaymentModal" tabindex="-1">
     <div class="modal-dialog">
-        <form class="modal-content" action="/add_payment" method="POST" enctype="multipart/form-data">
-            <div class="modal-header">
-                <h5 class="modal-title">New Payment (Auto No: {{ next_auto }})</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <form class="modal-content border-secondary" style="background: #1e293b;" action="/add_payment" method="POST" enctype="multipart/form-data">
+            <div class="modal-header border-0">
+                <h5 class="text-warning fw-bold">New Payment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Client Name</label>
-                    <select name="client_name" class="form-select select2-searchable" required>
+                <div class="mb-3 position-relative">
+                    <label class="text-white-50 small fw-bold mb-1">CLIENT (NAME OR CODE)</label>
+                    <div class="input-group">
+                        <input type="text" name="client_code" id="addPaymentClientCode" class="form-control bg-dark text-white border-secondary" placeholder="Search by name or code..." autocomplete="off" required onfocus="showCombobox('addPaymentClientCode', 'addPaymentCombobox')" oninput="filterCombobox('addPaymentClientCode', 'addPaymentCombobox', 'addPaymentClientNameDisplay')">
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleCombobox('addPaymentClientCode', 'addPaymentCombobox')">
+                            <i class="bi bi-chevron-down text-warning"></i>
+                        </button>
+                    </div>
+                    <div id="addPaymentCombobox" class="combobox-list shadow-lg" style="display: none;">
                         {% for client in clients %}
-                        <option value="{{ client.name }}">{{ client.name }}</option>
+                        <div class="combobox-item" onclick="selectComboboxItem('addPaymentClientCode', 'addPaymentCombobox', '{{ client.code }}', '{{ client.name }}', 'addPaymentClientNameDisplay')">
+                            <span class="fw-bold text-warning code-span">{{ client.code }}</span>
+                            <span class="ms-2 text-white-50 small name-span">{{ client.name }}</span>
+                        </div>
                         {% endfor %}
-                    </select>
+                    </div>
+                    <div id="addPaymentClientNameDisplay" class="text-info small mt-1 fw-bold"></div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Amount</label>
-                    <input type="number" step="0.01" name="amount" class="form-control" required>
+                    <label class="text-white-50 small fw-bold mb-1">AMOUNT</label>
+                    <input type="number" step="0.01" name="amount" class="form-control bg-dark text-white border-secondary" required placeholder="0.00">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Payment Method</label>
-                    <select name="method" class="form-select">
+                    <label class="text-white-50 small fw-bold mb-1">METHOD</label>
+                    <select name="method" class="form-select bg-dark text-white border-secondary">
                         <option value="Cash">Cash</option>
                         <option value="Bank">Bank Transfer</option>
                         <option value="Check">Check</option>
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Manual Bill Number</label>
-                    <input type="text" name="manual_bill_no" class="form-control">
+                    <label class="text-white-50 small fw-bold mb-1">MANUAL BILL NO</label>
+                    <input type="text" name="manual_bill_no" class="form-control bg-dark text-white border-secondary">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Upload Manual Bill Photo</label>
-                    <input type="file" name="photo" class="form-control" accept="image/*">
+                    <label class="text-white-50 small fw-bold mb-1">BILL PHOTO</label>
+                    <input type="file" name="photo" class="form-control bg-dark text-white border-secondary" accept="image/*">
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Save Payment</button>
+            <div class="modal-footer border-0 d-flex gap-2">
+                <button type="reset" class="btn btn-outline-secondary flex-grow-1 py-2 rounded-pill fw-bold">Reset</button>
+                <button type="submit" class="btn btn-warning text-dark fw-bold flex-grow-1 py-2 rounded-pill">Save Payment</button>
             </div>
         </form>
     </div>
@@ -88,30 +106,53 @@
 {% for payment in payments %}
 <div class="modal fade" id="editPaymentModal{{ payment.id }}" tabindex="-1">
     <div class="modal-dialog">
-        <form class="modal-content" action="/edit_bill/Payment/{{ payment.id }}" method="POST" enctype="multipart/form-data">
-            <div class="modal-header">
-                <h5 class="modal-title">Edit Payment: {{ payment.auto_bill_no }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <form class="modal-content border-secondary" style="background: #1e293b;" action="/edit_bill/Payment/{{ payment.id }}" method="POST" enctype="multipart/form-data">
+            <div class="modal-header border-0">
+                <h5 class="text-warning fw-bold">Edit Payment: {{ payment.manual_bill_no or 'No Bill' }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Amount</label>
-                    <input type="number" step="0.01" name="amount" class="form-control" value="{{ payment.amount }}" required>
+                <div class="mb-3 position-relative">
+                    <label class="text-white-50 small fw-bold mb-1">CLIENT (NAME OR CODE)</label>
+                    <div class="input-group">
+                        <input type="text" name="client_code" id="editPaymentClientCode{{ payment.id }}" value="{{ payment.client_code or '' }}" class="form-control bg-dark text-white border-secondary" placeholder="Search by name or code..." autocomplete="off" required onfocus="showCombobox('editPaymentClientCode{{ payment.id }}', 'editPaymentCombobox{{ payment.id }}')" oninput="filterCombobox('editPaymentClientCode{{ payment.id }}', 'editPaymentCombobox{{ payment.id }}', 'editPaymentClientNameDisplay{{ payment.id }}')">
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleCombobox('editPaymentClientCode{{ payment.id }}', 'editPaymentCombobox{{ payment.id }}')">
+                            <i class="bi bi-chevron-down text-warning"></i>
+                        </button>
+                    </div>
+                    <div id="editPaymentCombobox{{ payment.id }}" class="combobox-list shadow-lg" style="display: none;">
+                        {% for client in clients %}
+                        <div class="combobox-item" onclick="selectComboboxItem('editPaymentClientCode{{ payment.id }}', 'editPaymentCombobox{{ payment.id }}', '{{ client.code }}', '{{ client.name }}', 'editPaymentClientNameDisplay{{ payment.id }}')">
+                            <span class="fw-bold text-warning code-span">{{ client.code }}</span>
+                            <span class="ms-2 text-white-50 small name-span">{{ client.name }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div id="editPaymentClientNameDisplay{{ payment.id }}" class="text-info small mt-1 fw-bold">Name: {{ payment.client_name }}</div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Manual Bill Number</label>
-                    <input type="text" name="manual_bill_no" class="form-control" value="{{ payment.manual_bill_no }}">
+                    <label class="text-white-50 small fw-bold mb-1">AMOUNT</label>
+                    <input type="number" step="0.01" name="amount" class="form-control bg-dark text-white border-secondary" value="{{ payment.amount }}" required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Update Bill Photo</label>
-                    <input type="file" name="photo" class="form-control" accept="image/*">
-                    {% if payment.photo_path %}
-                    <div class="mt-2 small text-muted">Current: <a href="{{ url_for('static', filename='uploads/' + payment.photo_path) }}" target="_blank">View</a></div>
-                    {% endif %}
+                    <label class="text-white-50 small fw-bold mb-1">METHOD</label>
+                    <select name="method" class="form-select bg-dark text-white border-secondary">
+                        <option value="Cash" {% if payment.method == 'Cash' %}selected{% endif %}>Cash</option>
+                        <option value="Bank" {% if payment.method == 'Bank' %}selected{% endif %}>Bank Transfer</option>
+                        <option value="Check" {% if payment.method == 'Check' %}selected{% endif %}>Check</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">MANUAL BILL NO</label>
+                    <input type="text" name="manual_bill_no" class="form-control bg-dark text-white border-secondary" value="{{ payment.manual_bill_no }}">
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">UPDATE PHOTO</label>
+                    <input type="file" name="photo" class="form-control bg-dark text-white border-secondary" accept="image/*">
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+            <div class="modal-footer border-0">
+                <button type="submit" class="btn btn-warning text-dark fw-bold w-100 py-2 rounded-pill">Save Changes</button>
             </div>
         </form>
     </div>

@@ -2,9 +2,53 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-warning">Material Brands</h2>
+    <div class="d-flex gap-2">
+    <button class="btn btn-outline-info fw-bold px-4 rounded-pill shadow" data-bs-toggle="modal" data-bs-target="#mergeModal">
+        <i class="bi bi-intersect me-1"></i> Merge Brands
+    </button>
+    <a href="/" class="btn btn-outline-light fw-bold px-4 rounded-pill shadow"><i class="bi bi-arrow-left me-1"></i> Back</a>
     <button class="btn btn-warning text-dark fw-bold px-4 rounded-pill shadow" data-bs-toggle="modal" data-bs-target="#mModal">
         <i class="bi bi-plus-lg me-1"></i> Add Brand
     </button>
+    </div>
+</div>
+
+<!-- Merge Modal -->
+<div class="modal fade" id="mergeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="/merge_materials" method="POST" class="modal-content border-secondary" style="background: #1e293b; border-radius: 15px;">
+            <div class="modal-header border-0">
+                <h5 class="text-warning fw-bold">Merge/Shift Material</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-white-50 small">This will move all bills, entries, and transactions from the "Source" material to the "Target" material, then delete the source.</p>
+                
+                <label class="text-white fw-bold mb-2 small text-uppercase">Source Brand (To Delete)</label>
+                <select name="source_material_id" class="form-select bg-dark text-white border-secondary mb-3" required>
+                    <option value="">Select source...</option>
+                    {% for m in all_materials %}
+                    <option value="{{ m.id }}">{{ m.name }} ({{ m.code }})</option>
+                    {% endfor %}
+                </select>
+
+                <label class="text-white fw-bold mb-2 small text-uppercase">Target Brand (To Keep)</label>
+                <select name="target_material_id" class="form-select bg-dark text-white border-secondary" required>
+                    <option value="">Select target...</option>
+                    {% for m in all_materials %}
+                    <option value="{{ m.id }}">{{ m.name }} ({{ m.code }})</option>
+                    {% endfor %}
+                </select>
+                
+                <div class="alert alert-danger mt-3 small">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> This action cannot be undone.
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="submit" class="btn btn-danger text-white fw-bold w-100 py-2 rounded-pill shadow" onclick="return confirm('Are you absolutely sure you want to merge these materials? This will permanently delete the source material.')">Confirm & Merge Materials</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <div class="card shadow-sm" style="background: #1e293b; border: 2px solid #475569; border-radius: 15px; overflow: hidden;">
@@ -93,8 +137,9 @@
                 <input type="text" name="material_code" class="form-control bg-dark text-white border-secondary fs-5 py-2" placeholder="e.g. LKY-001" required>
                 <p class="text-white-50 x-small mt-2 mb-0">Code is required and must be unique. Auto-generated only for imports.</p>
             </div>
-            <div class="modal-footer border-0">
-                <button type="submit" class="btn btn-warning text-dark fw-bold w-100 py-2 rounded-pill shadow">Save Brand</button>
+            <div class="modal-footer border-0 d-flex gap-2">
+                <button type="reset" class="btn btn-outline-secondary flex-grow-1 py-2 rounded-pill fw-bold">Reset</button>
+                <button type="submit" class="btn btn-warning text-dark fw-bold flex-grow-1 py-2 rounded-pill shadow">Save Brand</button>
             </div>
         </form>
     </div>

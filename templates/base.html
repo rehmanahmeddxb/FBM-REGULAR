@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ahmed Cement Inventory</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            padding-top: 65px;
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+    </style>
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <a class="navbar-brand" href="{{ url_for('index') }}">Ahmed Cement</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            {% if current_user.is_authenticated %}
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('index') }}">Dashboard</a>
+                </li>
+                
+                <!-- Inventory Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="inventoryDropdown" role="button" data-toggle="dropdown">
+                        Inventory
+                    </a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{{ url_for('grn') }}">Receiving (GRN)</a>
+                        <a class="dropdown-item" href="{{ url_for('inventory.stock_summary') }}">Stock Summary</a>
+                        <a class="dropdown-item" href="{{ url_for('inventory.daily_transactions') }}">Daily Transactions</a>
+                        <a class="dropdown-item" href="{{ url_for('tracking') }}">Tracking</a>
+                    </div>
+                </li>
+
+                <!-- Sales Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="salesDropdown" role="button" data-toggle="dropdown">
+                        Sales
+                    </a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{{ url_for('bookings_page') }}">Bookings</a>
+                        <a class="dropdown-item" href="{{ url_for('direct_sales_page') }}">Direct Sales</a>
+                        <a class="dropdown-item" href="{{ url_for('dispatching') }}">Dispatching</a>
+                    </div>
+                </li>
+
+                <!-- Finance Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="financeDropdown" role="button" data-toggle="dropdown">
+                        Finance
+                    </a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{{ url_for('pending_bills') }}">Pending Bills</a>
+                        <a class="dropdown-item" href="{{ url_for('payments_page') }}">Payments</a>
+                        <a class="dropdown-item" href="{{ url_for('unpaid_transactions_page') }}">Unpaid Transactions</a>
+                        <a class="dropdown-item" href="{{ url_for('financial_details') }}">Financial Reports</a>
+                    </div>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('clients') }}">Clients</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('materials') }}">Materials</a>
+                </li>
+
+                <!-- More Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="moreDropdown" role="button" data-toggle="dropdown">
+                        More
+                    </a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{{ url_for('import_export.import_export_page') }}">Import/Export</a>
+                        <a class="dropdown-item" href="{{ url_for('settings') }}">Settings</a>
+                    </div>
+                </li>
+            </ul>
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <span class="navbar-text mr-3">
+                        <i class="fas fa-user"></i> {{ current_user.username }}
+                    </span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert">
+                                    <span>&times;</span>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Page Content -->
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

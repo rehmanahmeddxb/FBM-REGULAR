@@ -1,33 +1,8 @@
-# Ahmed Cement Inventory System
-
-## Recent Changes (January 25, 2026)
-- **Duplicate Prevention**: Clients and Materials are now differentiated by unique CODES
-- **Manual Entry**: Code is REQUIRED when manually adding clients or materials
-- **Import Auto-Code**: CSV/Excel imports auto-generate codes if missing:
-  - Clients: `tmpc-000001`, `tmpc-000002`, etc.
-  - Materials: `tmpm-00001`, `tmpm-00002`, etc.
-- **Database Schema**: Both Client and Material models now have `code` as unique required field
-
-## Master Rules & Architecture (January 26, 2026)
-- **Pending Bills Master**: Single source of truth. Lightweight, indexed, and fast-loading.
-- **Import Logic**: Harden imports to allow blank cells (except Bill No and Client ID). Auto-create clients if missing.
-- **Granular Wipe**: Settings now allow selecting specific datasets (Clients, Bills, Entries, Materials) for deletion.
-- **Modern UI**: Flatpickr implemented globally for a bug-free, modern date selection experience.
-- **Data Consistency**: Edits propagate across all relevant modules (Pending Bills, Dispatching, Receiving, Reports).
-- **Function-level Permissions**: Standard users restricted from editing back-dated data.
+# Ahmed Cement - Integrated CRM & Inventory System
 
 ## Overview
 
-This is a Flask-based inventory management system for a cement distribution business. The application tracks stock receiving (IN) and dispatching (OUT), manages client relationships, and provides reporting capabilities. It features user authentication with role-based access control (admin/user), a dark-themed modern UI built with Bootstrap 5, and SQLite database storage.
-
-**Core Features:**
-- Stock receiving and dispatching with material tracking
-- Client directory with individual transaction ledgers
-- Material/brand management
-- Daily inventory log with physical count reconciliation
-- Excel/CSV/PDF export capabilities
-- Data import functionality (append or daily sync modes)
-- Multi-user system with admin controls
+Ahmed Cement Inventory Pro is a comprehensive sales and inventory management system built with Flask. It provides complete warehouse management capabilities including goods receipt (GRN), deliveries, stock tracking, client management, bookings, payments, invoicing, and financial ledgers. The application uses a dark-themed UI and is designed for cement/materials distribution businesses.
 
 ## User Preferences
 
@@ -35,64 +10,75 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
-- **Template Engine:** Jinja2 templating integrated with Flask
-- **UI Framework:** Bootstrap 5.3 with Bootstrap Icons
-- **Design Pattern:** Server-side rendered pages using a shared layout template (`layout.html`)
-- **Theme:** Dark mode design with custom CSS variables (navy/slate color scheme with gold accents)
-- **Navigation:** Fixed sidebar navigation with responsive design
+### Backend Framework
+- **Flask** serves as the web framework with Jinja2 templating
+- **Flask-SQLAlchemy** provides ORM functionality with SQLite as the database
+- **Flask-Login** handles user authentication and session management
 
-### Backend Architecture
-- **Framework:** Flask (Python web framework)
-- **Pattern:** Monolithic MVC-style architecture with routes defined in `main.py`
-- **Authentication:** Flask-Login for session management with Werkzeug password hashing
-- **Role System:** Two-tier access control (admin, user) stored in User model
+### Application Structure
+- **main.py** - Primary application entry point containing routes and business logic
+- **app.py** - Compatibility shim providing `create_app()` factory pattern for tests
+- **models.py** - Database models using SQLAlchemy ORM
 
-### Data Storage
-- **Database:** SQLite with SQLAlchemy ORM
-- **Location:** `instance/ahmed_cement.db` (created automatically)
-- **Models:**
-  - `User` - Authentication and role management
-  - `Client` - Customer directory (name, code, phone, address)
-  - `Material` - Cement brands/types
-  - `Entry` - Transaction records (IN/OUT movements)
+### Modular Blueprint System
+The application uses an auto-discovery blueprint system located in `blueprints/`:
+- **module_loader.py** in `utils/` automatically discovers and registers blueprints
+- Blueprints follow naming convention `*_bp` or `bp` for auto-registration
+- Each module can include a `MODULE_CONFIG` dict for metadata (name, description, url_prefix, enabled status)
 
-### Key Design Decisions
+### Key Blueprints
+- **inventory** - Stock summary and daily transactions
+- **import_export** - Bulk data import/export functionality
+- **data_lab** - Data reconciliation and analysis tools
+- **admin** - System administration (admin-only access)
 
-1. **SQLite over PostgreSQL:** Chosen for simplicity and portability. The application creates the database file automatically in an `instance` folder. This can be migrated to PostgreSQL if scaling is needed.
+### Database Models
+Core entities include:
+- **User** - Authentication with role-based permissions (admin/user)
+- **Client** - Customer records with auto-generated codes (tmpc-XXXXXX format)
+- **Material** - Inventory items with auto-generated codes (tmpm-XXXXX format)
+- **Entry** - Stock IN/OUT transactions
+- **GRN/GRNItem** - Goods Receipt Notes for incoming stock
+- **Delivery/DeliveryItem** - Outbound deliveries reducing stock
+- **Booking/BookingItem** - Customer booking records
+- **Payment** - Payment tracking with multiple methods
+- **Invoice** - Invoice management with status tracking
+- **PendingBill** - Unpaid bills tracking
+- **DirectSale/DirectSaleItem** - Quick sales entries
 
-2. **Server-Side Rendering:** All pages are rendered server-side using Jinja2 templates rather than a SPA approach. This keeps the stack simple and reduces frontend complexity.
+### Authentication & Authorization
+- Password hashing via Werkzeug security utilities
+- Role-based access: 'admin' and 'user' roles
+- Granular permissions per user: can_view_stock, can_view_daily, can_view_history, can_import_export, can_manage_directory
+- Backdated edit restrictions available per user
 
-3. **Modular Architecture:** The main routes are in `main.py` with specialized functionality split into blueprints (`blueprints/inventory.py`, `blueprints/import_export.py`).
-
-4. **Session-Based Auth:** Uses Flask-Login sessions rather than JWT tokens, appropriate for a traditional web application with server-rendered pages.
-
-5. **Optimized Database Queries:** All data aggregation uses SQLAlchemy's `func.sum()` and `case()` expressions instead of Python loops for maximum performance. This prevents memory issues with large datasets.
-
-### Database Indexes
-
-Composite indexes added to Entry model for fast lookups:
-- `idx_entry_date_material` - Date and material combination queries
-- `idx_entry_material_type` - Material and type aggregations
-- `idx_entry_date_type` - Date and type filtering
-- `idx_entry_client_date` - Client ledger queries
+### Template Structure
+- **layout.html** - Base template with dark-themed sidebar navigation
+- Bootstrap 5 with dark theme styling
+- Bootstrap Icons for UI elements
+- Flatpickr for date picking
 
 ## External Dependencies
 
 ### Python Packages
-- **Flask** - Web framework
-- **Flask-SQLAlchemy** - ORM for database operations
-- **Flask-Login** - User session management
-- **Werkzeug** - Password hashing utilities
-- **Pandas** - Data manipulation for imports/exports
+- **Flask 3.0.0** - Web framework
+- **Flask-SQLAlchemy 3.1.1** - Database ORM
+- **Flask-Login 0.6.3** - User session management
+- **Werkzeug 3.0.1** - WSGI utilities and password hashing
+- **reportlab 4.0.7** - PDF report generation
+- **pandas 2.1.4** - Data manipulation for imports/exports
+- **openpyxl 3.1.2** - Excel file handling
 
-### Frontend CDN Resources
-- Bootstrap 5.3.0 CSS/JS
-- Bootstrap Icons 1.10.0
+### Frontend Libraries (CDN)
+- Bootstrap 5.3.0 - UI framework
+- Bootstrap Icons 1.10.0 - Icon set
+- Flatpickr - Date picker component
+- SheetJS (xlsx) - Client-side Excel parsing for imports
 
 ### Database
-- SQLite (file-based, no external server required)
+- **SQLite** - File-based database stored at `instance/ahmed_cement.db`
+- Database auto-creates on first run via `db.create_all()`
 
 ### File Storage
-- Local filesystem for database storage (`instance/` directory)
-- No cloud storage integrations
+- Uploaded files (photos for GRN/Delivery) stored locally
+- Max upload size configured at 16MB

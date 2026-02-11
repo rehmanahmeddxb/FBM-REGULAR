@@ -1,122 +1,146 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Bookings</h2>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBookingModal">Add Booking</button>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <h2 class="fw-bold text-warning mb-0"><i class="bi bi-calendar-check me-2"></i>Bookings</h2>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="/" class="btn btn-outline-light btn-sm fw-bold"><i class="bi bi-arrow-left me-1"></i> Back</a>
+        <button class="btn btn-warning btn-sm text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#addBookingModal">
+            <i class="bi bi-plus-lg"></i> Add Booking
+        </button>
+    </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="ps-3">Auto Bill</th>
-                        <th>Client</th>
-                        <th>Material</th>
-                        <th>Qty</th>
-                        <th>Total Amount</th>
-                        <th>Actually Paid</th>
-                        <th class="text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for booking in bookings %}
-                    <tr>
-                        <td class="ps-3"><a href="/view_bill/{{ booking.auto_bill_no|replace('#', '%23') }}" class="badge bg-primary text-decoration-none">{{ booking.auto_bill_no }}</a></td>
-                        <td>{{ booking.client_name }}</td>
-                        <td>
-                            {% if booking.items %}
-                                {{ booking.items[0].material_name }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if booking.items %}
-                                {{ booking.items[0].qty }}
-                            {% else %}
-                                0
-                            {% endif %}
-                        </td>
-                        <td>{{ currency_symbol }}{{ "%.2f"|format(booking.amount) }}</td>
-                        <td><span class="text-success">{{ currency_symbol }}{{ "%.2f"|format(booking.paid_amount) }}</span></td>
-                        <td class="text-center">
-                            <div class="btn-group">
-                                <a href="/view_bill/{{ booking.auto_bill_no|replace('#', '%23') }}" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
-                                <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editBookingModal{{ booking.id }}" title="Edit">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <a href="/delete_bill/Booking/{{ booking.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete booking?')"><i class="bi bi-trash"></i></a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+<div class="card border-0 shadow-sm" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px; overflow: hidden;">
+    <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle mb-0">
+            <thead style="background: #0f172a;">
+                <tr>
+                    <th class="fw-bold py-3 ps-4 border-bottom border-secondary text-white-50">Manual Bill</th>
+                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Client</th>
+                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Material</th>
+                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Qty</th>
+                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Total Amount</th>
+                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Actually Paid</th>
+                    <th class="fw-bold py-3 text-end pe-4 border-bottom border-secondary text-white-50">Actions</th>
+                </tr>
+            </thead>
+            <tbody style="background: #1e293b;">
+                {% for booking in bookings %}
+                <tr style="border-bottom: 1px solid #334155;">
+                    <td class="ps-4">
+                        {% if booking.manual_bill_no %}
+                        <a href="/view_bill/{{ booking.manual_bill_no|replace('#', '%23') }}" class="badge bg-dark border border-secondary text-warning text-decoration-none">{{ booking.manual_bill_no }}</a>
+                        {% else %}
+                        <span class="text-white-50 small">No Bill</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-white">{{ booking.client_name }}</td>
+                    <td class="text-white">
+                        {% if booking.items %}
+                            {{ booking.items[0].material_name }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="text-info fw-bold">
+                        {% if booking.items %}
+                            {{ booking.items[0].qty }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </td>
+                    <td class="text-danger fw-bold">{{ currency_symbol }}{{ "%.2f"|format(booking.amount) }}</td>
+                    <td class="text-success fw-bold">{{ currency_symbol }}{{ "%.2f"|format(booking.paid_amount) }}</td>
+                    <td class="text-end pe-4">
+                        <a href="/view_bill/{{ booking.auto_bill_no|replace('#', '%23') }}" class="btn btn-outline-info btn-sm border-2 rounded-pill shadow-sm me-1" title="View"><i class="bi bi-eye"></i></a>
+                        <button type="button" class="btn btn-outline-warning btn-sm border-2 rounded-pill shadow-sm me-1" data-bs-toggle="modal" data-bs-target="#editBookingModal{{ booking.id }}" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <a href="/delete_bill/Booking/{{ booking.id }}" class="btn btn-outline-danger btn-sm border-2 rounded-pill shadow-sm" onclick="return confirm('Delete booking?')"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
 <div class="modal fade" id="addBookingModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <form class="modal-content" action="/add_booking" method="POST" enctype="multipart/form-data">
-            <div class="modal-header">
-                <h5 class="modal-title">New Booking (Auto No: {{ next_auto }})</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <form class="modal-content border-secondary" style="background: #1e293b;" action="/add_booking" method="POST" enctype="multipart/form-data">
+            <div class="modal-header border-0">
+                <h5 class="text-warning fw-bold">New Booking</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Client Name</label>
-                    <select name="client_name" class="form-select select2-searchable" required>
+                <div class="mb-3 position-relative">
+                    <label class="text-white-50 small fw-bold mb-1">CLIENT (NAME OR CODE)</label>
+                    <div class="input-group">
+                        <input type="text" name="client_code" id="addBookingClientCode" class="form-control bg-dark text-white border-secondary" placeholder="Search by name or code..." autocomplete="off" required onfocus="showCombobox('addBookingClientCode', 'addBookingCombobox')" oninput="filterCombobox('addBookingClientCode', 'addBookingCombobox', 'addBookingClientNameDisplay')">
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleCombobox('addBookingClientCode', 'addBookingCombobox')">
+                            <i class="bi bi-chevron-down text-warning"></i>
+                        </button>
+                    </div>
+                    <div id="addBookingCombobox" class="combobox-list shadow-lg" style="display: none;">
                         {% for client in clients %}
-                        <option value="{{ client.name }}">{{ client.name }}</option>
+                        <div class="combobox-item" onclick="selectComboboxItem('addBookingClientCode', 'addBookingCombobox', '{{ client.code }}', '{{ client.name }}', 'addBookingClientNameDisplay')">
+                            <span class="fw-bold text-warning code-span">{{ client.code }}</span>
+                            <span class="ms-2 text-white-50 small name-span">{{ client.name }}</span>
+                        </div>
                         {% endfor %}
-                    </select>
+                    </div>
+                    <div id="addBookingClientNameDisplay" class="text-info small mt-1 fw-bold"></div>
                 </div>
                 <div id="items-container">
-                    <div class="compact-item-row">
-                        <div class="item-select">
-                            <select name="material_name[]" class="form-select price-trigger" required>
-                                <option value="">Material</option>
-                                {% for mat in materials %}
-                                <option value="{{ mat.name }}" data-price="{{ mat.unit_price }}">{{ mat.name }} ({{ currency_symbol }}{{ mat.unit_price }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="qty-group">
-                            <button type="button" onclick="changeQty(this, -1)">-</button>
-                            <input type="number" step="0.01" name="qty[]" value="1.00" class="qty-input" required>
-                            <button type="button" onclick="changeQty(this, 1)">+</button>
-                        </div>
-                        <div class="rate-input-group">
-                            <input type="number" step="0.01" name="unit_rate[]" class="form-control rate-input" placeholder="Rate" required>
-                        </div>
-                        <div class="remove-btn" onclick="this.closest('.compact-item-row').remove(); updatePrice(this.closest('form'));">
-                            <i class="bi bi-x-circle-fill"></i>
+                    <div class="compact-item-row mb-3 p-2 rounded border border-secondary bg-dark">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-5">
+                                <select name="material_name[]" class="form-select form-select-sm bg-dark text-white border-secondary price-trigger" required>
+                                    <option value="">Material</option>
+                                    {% for mat in materials %}
+                                    <option value="{{ mat.name }}" data-price="{{ mat.unit_price }}">{{ mat.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <div class="input-group input-group-sm">
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="changeQty(this, -1)">-</button>
+                                    <input type="number" step="0.01" name="qty[]" value="1.00" class="form-control bg-dark text-white border-secondary text-center qty-input" required>
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="changeQty(this, 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="col-3 position-relative">
+                                <input type="number" step="0.01" name="unit_rate[]" class="form-control form-control-sm bg-dark text-white border-secondary rate-input" placeholder="Rate" required>
+                                <div class="remove-btn position-absolute top-0 end-0 translate-middle-y mt-2" onclick="this.closest('.compact-item-row').remove(); updatePrice(this.closest('form'));" style="cursor:pointer; z-index: 5;">
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="addItemRow()">+ Add More Items</button>
-                <div class="mb-3">
-                    <label class="form-label">Total Booking Amount</label>
-                    <input type="number" step="0.01" name="amount" class="form-control total-amount" required>
+                <button type="button" class="btn btn-sm btn-outline-warning mb-3 w-100" onclick="addItemRow()">+ Add More Items</button>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="text-white-50 small fw-bold mb-1">TOTAL AMOUNT</label>
+                        <input type="number" step="0.01" name="amount" class="form-control bg-dark text-white border-secondary total-amount" required readonly>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="text-white-50 small fw-bold mb-1">PAID NOW</label>
+                        <input type="number" step="0.01" name="paid_amount" class="form-control bg-dark text-white border-secondary" value="0">
+                    </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Actually Paid Now</label>
-                    <input type="number" step="0.01" name="paid_amount" class="form-control" value="0">
+                    <label class="text-white-50 small fw-bold mb-1">MANUAL BILL NO</label>
+                    <input type="text" name="manual_bill_no" class="form-control bg-dark text-white border-secondary">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Manual Bill Number</label>
-                    <input type="text" name="manual_bill_no" class="form-control">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Upload Manual Bill Photo</label>
-                    <input type="file" name="photo" class="form-control" accept="image/*">
+                    <label class="text-white-50 small fw-bold mb-1">BILL PHOTO</label>
+                    <input type="file" name="photo" class="form-control bg-dark text-white border-secondary" accept="image/*">
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Save Booking</button>
+            <div class="modal-footer border-0 d-flex gap-2">
+                <button type="reset" class="btn btn-outline-secondary flex-grow-1 py-2 rounded-pill fw-bold">Reset</button>
+                <button type="submit" class="btn btn-warning text-dark fw-bold flex-grow-1 py-2 rounded-pill">Save Booking</button>
             </div>
         </form>
     </div>
@@ -125,69 +149,82 @@
 {% for booking in bookings %}
 <div class="modal fade" id="editBookingModal{{ booking.id }}" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <form class="modal-content" action="/edit_bill/Booking/{{ booking.id }}" method="POST" enctype="multipart/form-data">
-            <div class="modal-header">
-                <h5 class="modal-title">Edit Booking: {{ booking.auto_bill_no }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <form class="modal-content border-secondary" style="background: #1e293b;" action="/edit_bill/Booking/{{ booking.id }}" method="POST" enctype="multipart/form-data">
+            <div class="modal-header border-0">
+                <h5 class="text-warning fw-bold">Edit Booking: {{ booking.manual_bill_no or 'No Bill' }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-start">
-                <div class="mb-3">
-                    <label class="form-label">Client Name</label>
-                    <select name="client_name" class="form-select" required>
-                        {% for c in clients %}
-                        <option value="{{ c.name }}" {% if c.name == booking.client_name %}selected{% endif %}>{{ c.name }}</option>
+                <div class="mb-3 position-relative">
+                    <label class="text-white-50 small fw-bold mb-1">CLIENT (NAME OR CODE)</label>
+                    <div class="input-group">
+                        <input type="text" name="client_code" id="editBookingClientCode{{ booking.id }}" value="{{ booking.client_code or '' }}" class="form-control bg-dark text-white border-secondary" placeholder="Search by name or code..." autocomplete="off" required onfocus="showCombobox('editBookingClientCode{{ booking.id }}', 'editBookingCombobox{{ booking.id }}')" oninput="filterCombobox('editBookingClientCode{{ booking.id }}', 'editBookingCombobox{{ booking.id }}', 'editBookingClientNameDisplay{{ booking.id }}')">
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleCombobox('editBookingClientCode{{ booking.id }}', 'editBookingCombobox{{ booking.id }}')">
+                            <i class="bi bi-chevron-down text-warning"></i>
+                        </button>
+                    </div>
+                    <div id="editBookingCombobox{{ booking.id }}" class="combobox-list shadow-lg" style="display: none;">
+                        {% for client in clients %}
+                        <div class="combobox-item" onclick="selectComboboxItem('editBookingClientCode{{ booking.id }}', 'editBookingCombobox{{ booking.id }}', '{{ client.code }}', '{{ client.name }}', 'editBookingClientNameDisplay{{ booking.id }}')">
+                            <span class="fw-bold text-warning code-span">{{ client.code }}</span>
+                            <span class="ms-2 text-white-50 small name-span">{{ client.name }}</span>
+                        </div>
                         {% endfor %}
-                    </select>
+                    </div>
+                    <div id="editBookingClientNameDisplay{{ booking.id }}" class="text-info small mt-1 fw-bold">Name: {{ booking.client_name }}</div>
                 </div>
                 
                 <div class="items-container-edit">
                     {% for item in booking.items %}
-                    <div class="compact-item-row">
-                        <div class="item-select">
-                            <select name="material_name[]" class="form-select price-trigger" required>
-                                {% for mat in materials %}
-                                <option value="{{ mat.name }}" data-price="{{ mat.unit_price }}" {% if mat.name == item.material_name %}selected{% endif %}>{{ mat.name }} ({{ currency_symbol }}{{ mat.unit_price }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="qty-group">
-                            <button type="button" onclick="changeQty(this, -1)">-</button>
-                            <input type="number" step="0.01" name="qty[]" value="{{ "%.2f"|format(item.qty) }}" class="qty-input" required>
-                            <button type="button" onclick="changeQty(this, 1)">+</button>
-                        </div>
-                        <div class="rate-input-group">
-                            <input type="number" step="0.01" name="unit_rate[]" class="form-control rate-input" value="{{ item.price_at_time }}" required>
-                        </div>
-                        <div class="remove-btn" onclick="this.closest('.compact-item-row').remove(); updatePrice(this.closest('form'));">
-                            <i class="bi bi-x-circle-fill"></i>
+                    <div class="compact-item-row mb-3 p-2 rounded border border-secondary bg-dark">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-5">
+                                <select name="material_name[]" class="form-select form-select-sm bg-dark text-white border-secondary price-trigger" required>
+                                    {% for mat in materials %}
+                                    <option value="{{ mat.name }}" data-price="{{ mat.unit_price }}" {% if mat.name == item.material_name %}selected{% endif %}>{{ mat.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <div class="input-group input-group-sm">
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="changeQty(this, -1)">-</button>
+                                    <input type="number" step="0.01" name="qty[]" value="{{ "%.2f"|format(item.qty) }}" class="form-control bg-dark text-white border-secondary text-center qty-input" required>
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="changeQty(this, 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="col-3 position-relative">
+                                <input type="number" step="0.01" name="unit_rate[]" class="form-control form-control-sm bg-dark text-white border-secondary rate-input" value="{{ item.price_at_time }}" required>
+                                <div class="remove-btn position-absolute top-0 end-0 translate-middle-y mt-2" onclick="this.closest('.compact-item-row').remove(); updatePrice(this.closest('form'));" style="cursor:pointer; z-index: 5;">
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="addItemRowEdit(this)">+ Add More Items</button>
+                <button type="button" class="btn btn-sm btn-outline-warning mb-3 w-100" onclick="addItemRowEdit(this)">+ Add More Items</button>
 
-                <div class="mb-3">
-                    <label class="form-label">Total Amount ({{ currency_symbol }})</label>
-                    <input type="number" step="0.01" name="amount" class="form-control total-amount" value="{{ booking.amount }}" required>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="text-white-50 small fw-bold mb-1">TOTAL AMOUNT</label>
+                        <input type="number" step="0.01" name="amount" class="form-control bg-dark text-white border-secondary total-amount" value="{{ booking.amount }}" required readonly>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="text-white-50 small fw-bold mb-1">PAID AMOUNT</label>
+                        <input type="number" step="0.01" name="paid_amount" class="form-control bg-dark text-white border-secondary" value="{{ booking.paid_amount }}">
+                    </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Actually Paid ({{ currency_symbol }})</label>
-                    <input type="number" step="0.01" name="paid_amount" class="form-control" value="{{ booking.paid_amount }}">
+                    <label class="text-white-50 small fw-bold mb-1">MANUAL BILL NO</label>
+                    <input type="text" name="manual_bill_no" class="form-control bg-dark text-white border-secondary" value="{{ booking.manual_bill_no }}">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Manual Bill Number</label>
-                    <input type="text" name="manual_bill_no" class="form-control" value="{{ booking.manual_bill_no }}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Update Bill Photo</label>
-                    <input type="file" name="photo" class="form-control" accept="image/*">
-                    {% if booking.photo_path %}
-                    <div class="mt-2 small text-muted">Current: <a href="{{ url_for('static', filename='uploads/' + booking.photo_path) }}" target="_blank">View</a></div>
-                    {% endif %}
+                    <label class="text-white-50 small fw-bold mb-1">UPDATE PHOTO</label>
+                    <input type="file" name="photo" class="form-control bg-dark text-white border-secondary" accept="image/*">
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+            <div class="modal-footer border-0">
+                <button type="submit" class="btn btn-warning text-dark fw-bold w-100 py-2 rounded-pill">Save Changes</button>
             </div>
         </form>
     </div>

@@ -1,72 +1,144 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="card shadow-sm mx-auto" style="max-width: 800px;">
-    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Bill Detail: {{ bill.auto_bill_no }}</h5>
-        <a href="/download_invoice/{{ bill.auto_bill_no|replace('#', '%23') }}" class="btn btn-light btn-sm">
+<div class="card shadow-sm mx-auto border-0" style="max-width: 850px; background: white; color: black;">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center d-print-none">
+        <h5 class="mb-0">Bill Detail: {{ bill.manual_bill_no or bill.auto_bill_no or bill.invoice_no or '---' }}</h5>
+        <a href="/download_invoice/{{ (bill.manual_bill_no or bill.auto_bill_no or bill.invoice_no or '')|replace('#', '%23') }}" class="btn btn-light btn-sm fw-bold">
             <i class="bi bi-file-earmark-pdf"></i> Download PDF
         </a>
     </div>
-    <div class="card-body">
+    <div class="card-body p-5">
+        <!-- Header -->
+        <div class="row mb-4 border-bottom pb-3">
+            <div class="col-8">
+                <h2 class="fw-bold text-dark mb-0">AHMED CEMENT</h2>
+                <p class="text-muted small mb-0">Professional Building Materials Store</p>
+                <p class="text-muted small">Main Road, City Center | 0300-1234567</p>
+            </div>
+            <div class="col-4 text-end">
+                <h4 class="fw-bold text-uppercase text-secondary mb-1">INVOICE</h4>
+                <h5 class="fw-bold text-dark mb-0">{{ bill.manual_bill_no or bill.auto_bill_no or bill.invoice_no or '---' }}</h5>
+                <p class="text-muted small">{{ bill.date_posted.strftime('%d-%b-%Y') if (bill.date_posted is defined and bill.date_posted) else datetime.now().strftime('%d-%b-%Y') }}</p>
+            </div>
+        </div>
+
+        <!-- Client Info -->
         <div class="row mb-4">
             <div class="col-6">
-                <p class="mb-1 text-muted">{% if bill.supplier is defined %}Supplier:{% else %}Client:{% endif %}</p>
-                <h5 class="fw-bold">{{ bill.supplier if bill.supplier is defined else bill.client_name }}</h5>
-                <p class="mb-0 text-muted">Type: <span class="badge bg-info text-dark">{{ type }}</span></p>
+                <h6 class="fw-bold text-uppercase text-secondary small mb-1">Bill To:</h6>
+                <h5 class="fw-bold text-dark mb-0">{{ bill.supplier if bill.supplier is defined else bill.client_name }}</h5>
+                {% if client %}
+                <p class="text-muted small mb-0">{{ client.address or '' }}</p>
+                <p class="text-muted small mb-0">{{ client.phone or '' }}</p>
+                {% endif %}
             </div>
             <div class="col-6 text-end">
-                <p class="mb-1 text-muted">Date:</p>
-                <p class="fw-bold">{{ bill.date_posted.strftime('%d-%m-%Y %H:%M') if (bill.date_posted is defined and bill.date_posted) else '-' }}</p>
-                {% if bill.manual_bill_no %}
-                <p class="mb-0 text-muted">Manual Bill: <strong>{{ bill.manual_bill_no }}</strong></p>
+                {% if client %}
+                <div class="bg-light p-2 rounded border d-inline-block text-start" style="min-width: 200px;">
+                    <div class="d-flex justify-content-between"><span class="small text-muted">Previous Balance:</span> <span class="fw-bold">{{ "{:,.0f}".format(previous_balance) }}</span></div>
+                    <div class="d-flex justify-content-between border-bottom pb-1 mb-1"><span class="small text-muted">Current Bill:</span> <span class="fw-bold">{{ "{:,.0f}".format(bill.amount or 0) }}</span></div>
+                    <div class="d-flex justify-content-between"><span class="small text-dark fw-bold">Total Payable:</span> <span class="fw-bold text-danger">{{ "{:,.0f}".format(previous_balance + (bill.amount or 0)) }}</span></div>
+                </div>
                 {% endif %}
             </div>
         </div>
 
-        <table class="table table-bordered">
-            <thead class="table-light">
+        <!-- Items Table -->
+        <table class="table table-bordered border-secondary mb-4">
+            <thead class="bg-light text-dark">
                 <tr>
-                    <th>Description</th>
-                    <th class="text-end">Quantity</th>
+                    <th class="py-2">Description / Material</th>
+                    <th class="text-end py-2" style="width: 100px;">Qty</th>
+                    <th class="text-end py-2" style="width: 120px;">Rate</th>
+                    <th class="text-end py-2" style="width: 140px;">Amount</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in items %}
                 <tr>
-                    <td>{{ item.name }}</td>
-                    <td class="text-end">{{ item.qty }}</td>
+                    <td class="py-2">{{ item.name or item.material_name or item.product_name }}</td>
+                    <td class="text-end py-2">{{ item.qty }}</td>
+                    <td class="text-end py-2">{{ "{:,.0f}".format(item.price_at_time or 0) }}</td>
+                    <td class="text-end py-2 fw-bold">{{ "{:,.0f}".format((item.qty or 0) * (item.price_at_time or 0)) }}</td>
                 </tr>
                 {% endfor %}
+                {% if not items and type == 'Payment' %}
+                <tr>
+                    <td colspan="4" class="text-center py-3 fst-italic text-muted">Payment Received via {{ bill.method }}</td>
+                </tr>
+                {% endif %}
             </tbody>
-            {% if type != 'Delivery' %}
             <tfoot>
                 <tr>
-                    <th class="text-end">Total Amount:</th>
-                    <th class="text-end">{{ currency_symbol }}{{ "{:,.2f}".format(bill.amount) if bill.amount is defined else '0.00' }}</th>
+                    <td colspan="3" class="text-end fw-bold">Current Bill Total:</td>
+                    <td class="text-end fw-bold bg-light">{{ "{:,.0f}".format(bill.amount or 0) }}</td>
                 </tr>
-                {% if type in ['Booking', 'Sale'] %}
+                {% if type in ['Booking', 'DirectSale', 'Invoice'] %}
                 <tr>
-                    <th class="text-end">Paid Amount:</th>
-                    <th class="text-end text-success">{{ currency_symbol }}{{ "{:,.2f}".format(bill.paid_amount) }}</th>
-                </tr>
-                <tr>
-                    <th class="text-end">Balance:</th>
-                    <th class="text-end text-danger">{{ currency_symbol }}{{ "{:,.2f}".format(bill.amount - bill.paid_amount) }}</th>
+                    <td colspan="3" class="text-end text-muted">Paid Now:</td>
+                    <td class="text-end text-success fw-bold">{{ "{:,.0f}".format(bill.paid_amount or 0) }}</td>
                 </tr>
                 {% endif %}
             </tfoot>
-            {% endif %}
         </table>
 
+        <!-- Grand Total Section -->
+        <div class="row mb-5">
+            <div class="col-6">
+                {% if recent_deliveries %}
+                <h6 class="fw-bold text-uppercase text-secondary small mb-2">Previous Deliveries Summary</h6>
+                <table class="table table-sm table-borderless small text-muted mb-0">
+                    {% for d in recent_deliveries %}
+                    <tr>
+                        <td>{{ d.date }}</td>
+                        <td>{{ d.material }}</td>
+                        <td>{{ d.qty|int }} Bags</td>
+                        <td>{{ d.bill_no or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% endif %}
+            </div>
+            <div class="col-6">
+                <div class="border rounded p-3 bg-light">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-bold">Previous Balance:</span>
+                        <span>{{ "{:,.0f}".format(previous_balance) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-bold">Current Bill Net:</span>
+                        <span>
+                            {% if type == 'Payment' %}
+                                -{{ "{:,.0f}".format(bill.amount or 0) }}
+                            {% else %}
+                                {{ "{:,.0f}".format((bill.amount or 0) - (bill.paid_amount or 0)) }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between border-top border-dark pt-2 mt-2">
+                        <span class="h5 fw-bold text-dark mb-0">Net Closing Balance:</span>
+                        <span class="h5 fw-bold text-danger mb-0">{{ "{:,.0f}".format(client_balance) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center border-top pt-3 mt-4">
+            <p class="text-muted small mb-1">Thank you for your business!</p>
+            <p class="text-muted x-small">Software Developed by Ahmed Cement IT Dept.</p>
+        </div>
+
         {% if bill.photo_path %}
-        <div class="mt-4 text-center">
+        <div class="mt-4 text-center d-print-none">
             <p class="text-muted small">Attached Photo:</p>
             <img src="/static/uploads/{{ bill.photo_path }}" class="img-fluid rounded border shadow-sm" style="max-height: 400px;">
         </div>
         {% endif %}
     </div>
-    <div class="card-footer bg-white text-center">
+    <div class="card-footer bg-white text-center d-print-none">
         <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
+        <button onclick="window.print()" class="btn btn-primary fw-bold"><i class="bi bi-printer me-2"></i>Print Invoice</button>
     </div>
 </div>
 {% endblock %}

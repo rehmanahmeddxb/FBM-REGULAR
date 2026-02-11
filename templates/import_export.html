@@ -2,49 +2,116 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-warning mb-0">Import & Export</h2>
+    <a href="/" class="btn btn-outline-light btn-sm fw-bold"><i class="bi bi-arrow-left me-1"></i> Back</a>
 </div>
 
-<div class="card border-0 shadow-sm mb-4" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px;">
-    <div class="card-body p-4">
-        <h5 class="fw-bold mb-3 text-warning"><i class="bi bi-file-earmark-arrow-up me-2"></i>Import Transactions</h5>
-        <p class="text-white-50 small mb-4">Upload a CSV or Excel file to bulk import stock records.</p>
-        
-        <div id="importContainer">
-            <div class="row g-3 align-items-end mb-3">
-                <div class="col-md-4">
-                    <label class="small fw-bold text-white-50 mb-1">Select File</label>
-                    <input type="file" id="importFile" class="form-control bg-dark text-white border-secondary" accept=".csv, .xlsx, .xls">
-                </div>
-                <div class="col-md-3">
-                    <label class="small fw-bold text-white-50 mb-1">Import Mode</label>
-                    <select id="importMode" class="form-select bg-dark text-white border-secondary" onchange="document.getElementById('importDateDiv').style.display = this.value == 'daily' ? 'block' : 'none'">
-                        <option value="append">Append to History</option>
-                        <option value="daily">Daily Sync (Overwrite)</option>
-                    </select>
-                </div>
-                <div class="col-md-3" id="importDateDiv" style="display:none;">
-                    <label class="small fw-bold text-white-50 mb-1">Target Date</label>
-                    <input type="date" id="importDate" class="form-control bg-dark text-white border-secondary">
-                </div>
-                <div class="col-md-2">
-                    <button type="button" id="startImportBtn" class="btn btn-warning w-100 fw-bold text-dark shadow-sm">Process</button>
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm mb-4" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3 text-warning"><i class="bi bi-file-earmark-arrow-up me-2"></i>Import Deliveries (u2 Sheet)</h5>
+                <p class="text-white-50 small mb-4">Auto-adds clients and materials. Verify bill no and client code.</p>
+                
+                <div id="importContainer">
+                    <div class="row g-3 align-items-end mb-3">
+                        <div class="col-md-12">
+                            <label class="small fw-bold text-white-50 mb-1">Select File</label>
+                            <input type="file" id="importFile" class="form-control bg-dark text-white border-secondary" accept=".csv, .xlsx, .xls">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small fw-bold text-white-50 mb-1">Import Mode</label>
+                            <select id="importMode" class="form-select bg-dark text-white border-secondary" onchange="document.getElementById('importDateDiv').style.display = this.value == 'daily' ? 'block' : 'none'">
+                                <option value="append">Append to History</option>
+                                <option value="daily">Daily Sync (Overwrite)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6" id="importDateDiv" style="display:none;">
+                            <label class="small fw-bold text-white-50 mb-1">Target Date</label>
+                            <input type="date" id="importDate" class="form-control bg-dark text-white border-secondary">
+                        </div>
+                        <div class="col-md-12">
+                            <button type="button" id="startImportBtn" class="btn btn-warning w-100 fw-bold text-dark shadow-sm">Process Deliveries</button>
+                        </div>
+                    </div>
+                    
+                    <form action="/import_dispatch_data" method="POST" enctype="multipart/form-data" class="mt-3">
+                        <label class="small fw-bold text-white-50 mb-1">Import Dispatch CSV (with Categories)</label>
+                        <div class="input-group input-group-sm">
+                            <input type="file" name="file" class="form-control bg-dark text-white border-secondary" accept=".csv">
+                            <button type="submit" class="btn btn-warning fw-bold">Import CSV</button>
+                        </div>
+                    </form>
+
+                    <div id="importProgressSection" style="display: none;">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span id="importStatus" class="small text-white-50 fw-bold">Reading file...</span>
+                            <span id="importCount" class="small text-warning fw-bold">0 / 0 Rows</span>
+                        </div>
+                        <div class="progress bg-dark border border-secondary" style="height: 10px; border-radius: 5px;">
+                            <div id="importProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div id="importProgressSection" style="display: none;">
-                <div class="d-flex justify-content-between mb-1">
-                    <span id="importStatus" class="small text-white-50 fw-bold">Reading file...</span>
-                    <span id="importCount" class="small text-warning fw-bold">0 / 0 Rows</span>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm mb-4" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3 text-warning"><i class="bi bi-file-earmark-arrow-down me-2"></i>Full Database Sync (Excel)</h5>
+                <p class="text-white-50 small mb-4">Export/Import the entire database in a single multi-sheet Excel file.</p>
+                <div class="d-grid gap-2 mb-3">
+                    <a href="{{ url_for('import_export.export_excel_all') }}" class="btn btn-warning fw-bold text-dark shadow-sm">
+                        <i class="bi bi-download me-2"></i>Download Full Backup
+                    </a>
                 </div>
-                <div class="progress bg-dark border border-secondary" style="height: 10px; border-radius: 5px;">
-                    <div id="importProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style="width: 0%"></div>
-                </div>
+                <hr class="border-secondary">
+                <form id="fullImportForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="small fw-bold text-white-50 mb-1">Select Backup File</label>
+                        <input type="file" id="fullImportFile" class="form-control bg-dark text-white border-secondary" accept=".xlsx">
+                    </div>
+                    <button type="button" id="startFullImportBtn" class="btn btn-outline-warning w-100 fw-bold shadow-sm">
+                        <i class="bi bi-upload me-2"></i>Restore from Backup
+                    </button>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+document.getElementById('startFullImportBtn').addEventListener('click', async function() {
+    const file = document.getElementById('fullImportFile').files[0];
+    if (!file) { alert("Select file first"); return; }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Restoring...';
+    
+    try {
+        const response = await fetch('/import_export/import_excel_all', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert("Full database restore successful!");
+            location.reload();
+        } else {
+            alert("Restore failed: " + result.error);
+        }
+    } catch (e) {
+        alert("An error occurred");
+    } finally {
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-upload me-2"></i>Restore from Backup';
+    }
+});
+
 document.getElementById('startImportBtn').addEventListener('click', function() {
     const fileInput = document.getElementById('importFile');
     const file = fileInput.files[0];

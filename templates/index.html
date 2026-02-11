@@ -5,10 +5,6 @@
         <h2 class="fw-bold text-white mb-0">System <span class="text-warning">Dashboard</span></h2>
         <p class="text-white-50 mb-0">{{ today_date }}</p>
     </div>
-    <div class="d-flex gap-2">
-        <a href="/receiving" class="btn btn-success fw-bold px-4 rounded-pill shadow-sm"><i class="bi bi-plus-circle me-2"></i>Stock IN</a>
-        <a href="/dispatching" class="btn btn-info text-dark fw-bold px-4 rounded-pill shadow-sm"><i class="bi bi-dash-circle me-2"></i>Stock OUT</a>
-    </div>
 </div>
 
 <div class="row g-4 mb-4">
@@ -49,6 +45,53 @@
                     {% if current_user.can_view_daily or current_user.role == 'admin' %}
                     <a href="/daily_transactions" class="btn btn-outline-light border-2 fw-bold text-start ps-3"><i class="bi bi-list-check me-2 text-info"></i>Daily Breakdown</a>
                     {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Daily Cash Card -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px; cursor: pointer; transition: transform 0.2s;" onclick="window.location.href='{{ url_for('financial_details', type='cash') }}'" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-white-50 fw-bold text-uppercase small mb-1">Daily Cash Received</h6>
+                    <h2 class="fw-bold text-white mb-0">Rs. {{ "{:,.0f}".format(daily_cash) }}</h2>
+                </div>
+                <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                    <i class="bi bi-cash-stack text-success fs-2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Credit Card -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px; cursor: pointer; transition: transform 0.2s;" onclick="window.location.href='{{ url_for('financial_details', type='credit') }}'" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-white-50 fw-bold text-uppercase small mb-1">Daily Credit Given</h6>
+                    <h2 class="fw-bold text-white mb-0">Rs. {{ "{:,.0f}".format(daily_credit) }}</h2>
+                </div>
+                <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                    <i class="bi bi-credit-card text-danger fs-2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Outstanding Card -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px; cursor: pointer; transition: transform 0.2s;" onclick="window.location.href='/unpaid_transactions?status=unpaid'" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-white-50 fw-bold text-uppercase small mb-1">Total Outstanding</h6>
+                    <h2 class="fw-bold text-white mb-0">Rs. {{ "{:,.0f}".format(total_outstanding) }}</h2>
+                </div>
+                <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                    <i class="bi bi-exclamation-circle text-warning fs-2"></i>
                 </div>
             </div>
         </div>
