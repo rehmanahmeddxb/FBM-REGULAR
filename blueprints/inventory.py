@@ -100,6 +100,7 @@ def daily_transactions():
                            date_from=date_from,
                            date_to=date_to,
                            category_filter=category,
+                           transaction_category_filter=trans_category,
                            materials=materials,
                            categories=categories,
                            transaction_categories=transaction_categories,

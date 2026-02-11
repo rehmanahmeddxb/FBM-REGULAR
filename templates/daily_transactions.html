@@ -7,33 +7,39 @@
     </div>
     <div class="bg-dark border border-secondary rounded p-2 d-flex align-items-center shadow-sm">
         <i class="bi bi-calendar3 me-2 text-warning"></i>
-        <input type="date" id="dateFrom" value="{{ date_from or sel_date }}" class="border-0 fw-bold text-white bg-transparent" style="outline: none; min-width: 130px;">
+        <input type="date" id="dateFrom" value="{{ date_from or sel_date }}" class="border-0 fw-bold text-white bg-transparent" style="outline: none; min-width: 110px;">
         <span class="mx-2 text-white-50">to</span>
-        <input type="date" id="dateTo" value="{{ date_to or sel_date }}" class="border-0 fw-bold text-white bg-transparent" style="outline: none; min-width: 130px;">
-        <select id="categoryFilter" class="form-select form-select-sm bg-dark text-white border-secondary ms-2">
-            <option value="">All Categories</option>
-            <option value="Cash" {{ 'selected' if category_filter == 'Cash' }}>Cash (Unbilled)</option>
-            <option value="Credit Customer" {{ 'selected' if category_filter == 'Credit Customer' }}>Credit Sales</option>
-            <option value="Booking Customer" {{ 'selected' if category_filter == 'Booking Customer' }}>Booking Sales</option>
+        <input type="date" id="dateTo" value="{{ date_to or sel_date }}" class="border-0 fw-bold text-white bg-transparent" style="outline: none; min-width: 110px;">
+        
+        <select id="categoryFilter" class="form-select form-select-sm bg-dark text-white border-secondary ms-2" style="width: auto;">
+            <option value="">All Client Cats</option>
             {% for cat in categories %}
-            {% if cat not in ['Cash', 'Credit Customer', 'Booking Customer'] %}
             <option value="{{ cat }}" {{ 'selected' if cat == category_filter }}>{{ cat }}</option>
-            {% endif %}
             {% endfor %}
         </select>
-        <button class="btn btn-sm btn-warning ms-2 " onclick="applyDateFilter()">Apply</button>
+
+        <select id="transCategoryFilter" class="form-select form-select-sm bg-dark text-white border-secondary ms-2" style="width: auto;">
+            <option value="">All Trans Cats</option>
+            {% for tcat in transaction_categories %}
+            <option value="{{ tcat }}" {{ 'selected' if tcat == transaction_category_filter }}>{{ tcat }}</option>
+            {% endfor %}
+        </select>
+
+        <button class="btn btn-sm btn-warning ms-2" onclick="applyFilters()">Apply</button>
         <a href="/" class="btn btn-outline-light btn-sm fw-bold ms-2"><i class="bi bi-arrow-left me-1"></i> Back</a>
     </div>
 
     <script>
-    function applyDateFilter(){
+    function applyFilters(){
         const from = document.getElementById('dateFrom').value;
         const to = document.getElementById('dateTo').value;
         const cat = document.getElementById('categoryFilter').value;
+        const tcat = document.getElementById('transCategoryFilter').value;
         const params = new URLSearchParams();
         if (from) params.set('date_from', from);
         if (to) params.set('date_to', to);
         if (cat) params.set('category', cat);
+        if (tcat) params.set('transaction_category', tcat);
         location.href = '/inventory/daily_transactions?'+params.toString();
     }
     </script>

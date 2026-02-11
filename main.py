@@ -1916,6 +1916,24 @@ def import_dispatch_data():
             )
             db.session.add(entry)
 
+            # If billed and has bill_no, add to PendingBill if not exists
+            if t_cat == 'BILLED' and bill_no and bill_no != 'UNBILLED':
+                existing_bill = PendingBill.query.filter_by(bill_no=bill_no, client_code=code).first()
+                if not existing_bill:
+                    pb = PendingBill(
+                        client_code=code,
+                        client_name=name,
+                        bill_no=bill_no,
+                        nimbus_no=nimbus,
+                        amount=0, 
+                        reason=notes,
+                        created_at=datetime.now().strftime('%Y-%m-%d %H:%M'),
+                        created_by=current_user.username
+                    )
+                    db.session.add(pb)
+            
+            count += 1
+
         db.session.commit()
         flash(f'Imported {count} dispatching entries successfully.', 'success')
     except Exception as e:
