@@ -57,6 +57,7 @@ class Entry(db.Model):
     created_by = db.Column(db.String(80))
     created_at = db.Column(db.DateTime, default=datetime.now)
     is_void = db.Column(db.Boolean, default=False)
+    transaction_category = db.Column(db.String(50))
 
 
 class PendingBill(db.Model):

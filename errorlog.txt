@@ -2195,3 +2195,18 @@
 2026-02-11 11:42:25,453 INFO: 172.31.105.130 - - [11/Feb/2026 11:42:25] "GET /tracking?start_date=2026-02-11&end_date=2026-02-11&type=&has_bill=&client=&material=&bill_no=&category= HTTP/1.1" 200 -
 2026-02-11 11:42:28,925 INFO: 172.31.105.130 - - [11/Feb/2026 11:42:28] "GET /daily_transactions HTTP/1.1" 200 -
 2026-02-11 11:42:34,603 INFO: 172.31.105.130 - - [11/Feb/2026 11:42:34] "[33mGET /inventory/daily_transactions?date_from=2026-02-11&date_to=2026-02-11 HTTP/1.1[0m" 404 -
+2026-02-11 11:53:27,723 INFO: 172.31.105.130 - - [11/Feb/2026 11:53:27] "[33mGET /inventory/daily_transactions?date_from=2026-02-11&date_to=2026-02-11 HTTP/1.1[0m" 404 -
+2026-02-11 11:53:29,728 INFO: 172.31.105.130 - - [11/Feb/2026 11:53:29] "GET /daily_transactions HTTP/1.1" 200 -
+2026-02-11 11:53:30,554 INFO: 172.31.105.130 - - [11/Feb/2026 11:53:30] "GET /daily_transactions HTTP/1.1" 200 -
+2026-02-11 11:53:36,206 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.31.105.130:5000
+2026-02-11 11:53:36,206 INFO: [33mPress CTRL+C to quit[0m
+2026-02-11 11:53:37,634 INFO: 127.0.0.1 - - [11/Feb/2026 11:53:37] "[32mGET / HTTP/1.1[0m" 302 -
+2026-02-11 11:53:37,648 INFO: 127.0.0.1 - - [11/Feb/2026 11:53:37] "GET /login?next=/ HTTP/1.1" 200 -
+2026-02-11 11:53:37,911 INFO: 172.31.105.130 - - [11/Feb/2026 11:53:37] "[32mGET / HTTP/1.1[0m" 302 -
+2026-02-11 11:53:38,183 INFO: 172.31.105.130 - - [11/Feb/2026 11:53:38] "GET /login?next=/ HTTP/1.1" 200 -
+2026-02-11 11:53:45,622 INFO: 127.0.0.1 - - [11/Feb/2026 11:53:45] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-02-11 11:53:48,793 INFO: 172.31.105.130 - - [11/Feb/2026 11:53:48] "[32mPOST /login HTTP/1.1[0m" 302 -
+2026-02-11 11:53:48,942 INFO: 172.31.105.130 - - [11/Feb/2026 11:53:48] "GET / HTTP/1.1" 200 -
