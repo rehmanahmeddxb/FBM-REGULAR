@@ -2210,3 +2210,26 @@
 2026-02-11 11:53:45,622 INFO: 127.0.0.1 - - [11/Feb/2026 11:53:45] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
 2026-02-11 11:53:48,793 INFO: 172.31.105.130 - - [11/Feb/2026 11:53:48] "[32mPOST /login HTTP/1.1[0m" 302 -
 2026-02-11 11:53:48,942 INFO: 172.31.105.130 - - [11/Feb/2026 11:53:48] "GET / HTTP/1.1" 200 -
+2026-02-11 11:54:02,697 INFO: 172.31.105.130 - - [11/Feb/2026 11:54:02] "[32mGET /import_export HTTP/1.1[0m" 308 -
+2026-02-11 11:55:06,688 INFO: 172.31.105.130 - - [11/Feb/2026 11:55:06] "GET / HTTP/1.1" 200 -
+2026-02-11 11:55:09,152 INFO: 172.31.105.130 - - [11/Feb/2026 11:55:09] "GET /grn HTTP/1.1" 200 -
+2026-02-11 11:55:11,090 INFO: 172.31.105.130 - - [11/Feb/2026 11:55:11] "GET /stock_summary HTTP/1.1" 200 -
+2026-02-11 11:55:13,406 INFO: 172.31.105.130 - - [11/Feb/2026 11:55:13] "GET /daily_transactions HTTP/1.1" 200 -
+2026-02-11 11:55:14,921 INFO: 172.31.105.130 - - [11/Feb/2026 11:55:14] "[33mGET /inventory/daily_transactions?date_from=2026-02-11&date_to=2026-02-11 HTTP/1.1[0m" 404 -
+2026-02-11 11:55:17,354 INFO: 172.31.105.130 - - [11/Feb/2026 11:55:17] "GET /daily_transactions HTTP/1.1" 200 -
+2026-02-11 11:55:34,801 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.31.105.130:5000
+2026-02-11 11:55:34,801 INFO: [33mPress CTRL+C to quit[0m
+2026-02-11 11:55:36,710 INFO: 172.31.105.130 - - [11/Feb/2026 11:55:36] "[32mGET / HTTP/1.1[0m" 302 -
+2026-02-11 11:55:36,834 INFO: 172.31.105.130 - - [11/Feb/2026 11:55:36] "GET /login?next=/ HTTP/1.1" 200 -
+2026-02-11 11:55:44,499 INFO: 172.31.105.130 - - [11/Feb/2026 11:55:44] "[32mPOST /login HTTP/1.1[0m" 302 -
+2026-02-11 11:55:44,660 INFO: 172.31.105.130 - - [11/Feb/2026 11:55:44] "GET / HTTP/1.1" 200 -
+2026-02-11 11:57:30,626 INFO: 172.31.105.130 - - [11/Feb/2026 11:57:30] "GET /login?next=/ HTTP/1.1" 200 -
+2026-02-11 11:57:32,969 INFO: 172.31.105.130 - - [11/Feb/2026 11:57:32] "GET /login?next=/ HTTP/1.1" 200 -
+2026-02-11 11:58:34,984 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.31.105.130:5000
+2026-02-11 11:58:34,984 INFO: [33mPress CTRL+C to quit[0m

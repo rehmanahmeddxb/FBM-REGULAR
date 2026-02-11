@@ -1851,7 +1851,7 @@ def edit_entry(id):
 @login_required
 def import_dispatch_data():
     import pandas as pd
-    import io
+    from datetime import datetime
     file = request.files.get('file')
     if not file or not file.filename:
         flash('No file selected', 'danger')
@@ -1872,18 +1872,28 @@ def import_dispatch_data():
             bill_no = str(row.get('BILL_NO', '')).strip()
             b_date = str(row.get('BILL_DATE', '')).strip()
             brand = str(row.get('CEMENT_BRAND', '')).strip()
-            qty = float(row.get('QTY', 0))
+            qty_val = row.get('QTY', 0)
+            try:
+                qty = float(qty_val)
+            except:
+                qty = 0
             nimbus = str(row.get('NIMBUS', '')).strip()
             notes = str(row.get('NOTES', '')).strip()
 
             if not brand or qty <= 0: continue
 
             # Date conversion
-            try:
-                # Assuming MM/DD/YYYY from CSV sample
-                dt_obj = datetime.strptime(b_date, '%m/%d/%Y')
-                final_date = dt_obj.strftime('%Y-%m-%d')
-            except:
+            final_date = None
+            date_formats = ['%m/%d/%Y', '%Y-%m-%d', '%d/%m/%Y']
+            for fmt in date_formats:
+                try:
+                    dt_obj = datetime.strptime(b_date, fmt)
+                    final_date = dt_obj.strftime('%Y-%m-%d')
+                    break
+                except:
+                    continue
+            
+            if not final_date:
                 final_date = datetime.now().strftime('%Y-%m-%d')
 
             # Ensure client exists

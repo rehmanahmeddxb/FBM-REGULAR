@@ -81,8 +81,6 @@ def daily_transactions():
     # Build categories list for filter efficiently
     categories_query = db.session.query(Client.category).distinct().filter(Client.category != None, Client.category != '').all()
     categories = sorted([c[0] for c in categories_query])
-    if 'Cash' not in categories:
-        categories.insert(0, 'Cash')
     
     # Add Transaction Categories
     transaction_categories = ['BILLED', 'UNBILLED', 'OPEN KHATA']
@@ -91,7 +89,8 @@ def daily_transactions():
     bill_numbers = [e.bill_no for e in entries_pagination.items if e.bill_no]
     pending_photos = {}
     if bill_numbers:
-        pending_photos = {b.bill_no: b.photo_url for b in PendingBill.query.filter(PendingBill.bill_no.in_(bill_numbers), PendingBill.photo_url != '').all()}
+        # Use .get() or handle missing columns more robustly if needed, but here we assume models.py is correct
+        pending_photos = {b.bill_no: b.photo_url for b in PendingBill.query.filter(PendingBill.bill_no.in_(bill_numbers), PendingBill.photo_url != '').all() if hasattr(b, 'photo_url')}
 
     return render_template('daily_transactions.html', 
                            entries=entries_pagination.items, 

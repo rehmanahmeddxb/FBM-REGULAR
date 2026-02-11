@@ -191,11 +191,11 @@
         <nav>
             <ul class="pagination pagination-sm justify-content-center mb-0">
                 {% if pagination.has_prev %}
-                <li class="page-item"><a class="page-link bg-dark border-secondary text-warning" href="{{ url_for('inventory.daily_transactions', date_from=date_from, date_to=date_to, category=category_filter, page=pagination.prev_num) }}">Previous</a></li>
+                <li class="page-item"><a class="page-link bg-dark border-secondary text-warning" href="{{ url_for('inventory.daily_transactions', date_from=date_from, date_to=date_to, category=category_filter, transaction_category=transaction_category_filter, page=pagination.prev_num) }}">Previous</a></li>
                 {% endif %}
                 <li class="page-item active"><span class="page-link bg-warning border-warning text-dark">{{ pagination.page }}</span></li>
                 {% if pagination.has_next %}
-                <li class="page-item"><a class="page-link bg-dark border-secondary text-warning" href="{{ url_for('inventory.daily_transactions', date_from=date_from, date_to=date_to, category=category_filter, page=pagination.next_num) }}">Next</a></li>
+                <li class="page-item"><a class="page-link bg-dark border-secondary text-warning" href="{{ url_for('inventory.daily_transactions', date_from=date_from, date_to=date_to, category=category_filter, transaction_category=transaction_category_filter, page=pagination.next_num) }}">Next</a></li>
                 {% endif %}
             </ul>
         </nav>
