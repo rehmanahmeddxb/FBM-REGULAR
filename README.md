@@ -588,4 +588,5 @@ The Ahmed Cement Inventory Management System is designed to manage:
 - **Mark as paid:** Click "Mark as Paid" or add record in Payments page.
 - **Aging check:** Filter by date range to find old bills.
 #   V S C O D E - A P P  
+ #   R E P L I T V 5  
  
