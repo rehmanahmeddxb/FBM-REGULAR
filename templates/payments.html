@@ -1,21 +1,45 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
-    <h2 class="fw-bold text-warning mb-0"><i class="bi bi-cash-stack me-2"></i>Receive Payment</h2>
+    <h2 class="fw-bold text-warning mb-0"><i class="bi bi-cash-stack me-2"></i>Payments Hub</h2>
     <div class="d-flex gap-2 flex-wrap">
         <a href="/" class="btn btn-outline-light btn-sm fw-bold"><i class="bi bi-arrow-left me-1"></i> Back</a>
+        {% if party in ['customer', 'all'] %}
         <button class="btn btn-warning btn-sm text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
-            <i class="bi bi-plus-lg"></i> Add Payment
+            <i class="bi bi-plus-lg"></i> Add Customer Payment
         </button>
+        {% endif %}
+        {% if party in ['supplier', 'all'] %}
+        <button class="btn btn-success btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#addSupplierPaymentModal">
+            <i class="bi bi-plus-lg"></i> Add Supplier Payment
+        </button>
+        {% endif %}
     </div>
 </div>
 
-<div class="card border-0 shadow-sm" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px; overflow: hidden;">
+<div class="d-flex gap-2 flex-wrap mb-3">
+    <a href="{{ url_for('payments_page', party='customer', show=show_mode) }}" class="btn btn-sm {% if party == 'customer' %}btn-warning text-dark{% else %}btn-outline-warning{% endif %} fw-bold">Customer</a>
+    <a href="{{ url_for('payments_page', party='supplier', show=show_mode) }}" class="btn btn-sm {% if party == 'supplier' %}btn-success text-dark{% else %}btn-outline-success{% endif %} fw-bold">Supplier</a>
+    <a href="{{ url_for('payments_page', party='all', show=show_mode) }}" class="btn btn-sm {% if party == 'all' %}btn-info text-dark{% else %}btn-outline-info{% endif %} fw-bold">All</a>
+</div>
+
+<div class="d-flex gap-2 flex-wrap mb-4">
+    <a href="{{ url_for('payments_page', party=party, show='active') }}" class="btn btn-sm {% if show_mode == 'active' %}btn-warning text-dark{% else %}btn-outline-warning{% endif %} fw-bold">Active</a>
+    <a href="{{ url_for('payments_page', party=party, show='voided') }}" class="btn btn-sm {% if show_mode == 'voided' %}btn-danger{% else %}btn-outline-danger{% endif %} fw-bold">Voided</a>
+    <a href="{{ url_for('payments_page', party=party, show='all') }}" class="btn btn-sm {% if show_mode == 'all' %}btn-info text-dark{% else %}btn-outline-info{% endif %} fw-bold">All Status</a>
+</div>
+
+{% if party in ['customer', 'all'] %}
+<div class="card border-0 shadow-sm mb-4" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px; overflow: hidden;">
+    <div class="card-header bg-transparent border-secondary">
+        <h5 class="text-warning fw-bold mb-0">Customer Payments</h5>
+    </div>
     <div class="table-responsive">
         <table class="table table-dark table-hover align-middle mb-0">
             <thead style="background: #0f172a;">
                 <tr>
                     <th class="fw-bold py-3 ps-4 border-bottom border-secondary text-white-50">Manual Bill</th>
+                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Auto Bill</th>
                     <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Client</th>
                     <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Amount</th>
                     <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Method</th>
@@ -24,35 +48,127 @@
             </thead>
             <tbody style="background: #1e293b;">
                 {% for payment in payments %}
-                <tr style="border-bottom: 1px solid #334155;">
+                <tr style="border-bottom: 1px solid #334155; {% if payment.is_void %}opacity: 0.5; text-decoration: line-through;{% endif %}">
                     <td class="ps-4">
                         {% if payment.manual_bill_no %}
-                        <a href="/view_bill/{{ payment.manual_bill_no }}" class="badge bg-dark border border-secondary text-warning text-decoration-none">{{ payment.manual_bill_no }}</a>
+                        <a href="{{ url_for('view_bill', bill_no=payment.manual_bill_no|replace('#', '%23'), src='payment', src_id=payment.id, client_name=payment.client_name) }}" class="badge bg-dark border border-secondary text-warning text-decoration-none">{{ payment.manual_bill_no }}</a>
                         {% else %}
                         <span class="text-white-50 small">No Bill</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if payment.auto_bill_no %}
+                        <a href="{{ url_for('view_bill', bill_no=payment.auto_bill_no|replace('#', '%23'), src='payment', src_id=payment.id, client_name=payment.client_name) }}" class="badge bg-dark border border-secondary text-info text-decoration-none">{{ payment.auto_bill_no }}</a>
+                        {% else %}
+                        <span class="text-white-50 small">-</span>
                         {% endif %}
                     </td>
                     <td class="text-white">{{ payment.client_name }}</td>
                     <td class="text-success fw-bold">{{ currency_symbol }}{{ "%.2f"|format(payment.amount) }}</td>
                     <td class="text-info">{{ payment.method }}</td>
                     <td class="text-end pe-4">
+                        {% set payment_bill_ref = (payment.manual_bill_no or payment.auto_bill_no or ('PAY-' ~ payment.id)) %}
+                        <a href="{{ url_for('download_invoice', bill_no=payment_bill_ref|replace('#', '%23'), src='payment', src_id=payment.id, client_name=payment.client_name) }}" class="btn btn-outline-warning btn-sm border-2 rounded-pill shadow-sm me-1" title="Download PDF"><i class="bi bi-download"></i></a>
+                        <a href="{{ url_for('download_invoice', bill_no=payment_bill_ref|replace('#', '%23'), action='print', src='payment', src_id=payment.id, client_name=payment.client_name) }}" target="_blank" class="btn btn-outline-success btn-sm border-2 rounded-pill shadow-sm me-1" title="Print PDF"><i class="bi bi-printer"></i></a>
+                        {% if payment.photo_path %}
+                        <a href="{{ url_for('uploaded_file', filename=payment.photo_path) }}" target="_blank" class="btn btn-outline-light btn-sm border-2 rounded-pill shadow-sm me-1" title="View Photo"><i class="bi bi-image"></i></a>
+                        {% endif %}
+                        {% if payment.photo_url %}
+                        <a href="{{ payment.photo_url }}" target="_blank" class="btn btn-outline-light btn-sm border-2 rounded-pill shadow-sm me-1" title="View URL"><i class="bi bi-link-45deg"></i></a>
+                        {% endif %}
+                        {% if not payment.is_void %}
                         <button type="button" class="btn btn-outline-warning btn-sm border-2 rounded-pill shadow-sm me-1" data-bs-toggle="modal" data-bs-target="#editPaymentModal{{ payment.id }}" title="Edit">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <a href="/delete_bill/Payment/{{ payment.id }}" class="btn btn-outline-danger btn-sm border-2 rounded-pill shadow-sm" onclick="return confirm('Delete payment?')"><i class="bi bi-trash"></i></a>
+                        {% if current_user.role == 'admin' %}
+                        <button class="btn btn-outline-danger btn-sm border-2 rounded-pill shadow-sm me-1" onclick="if(confirm('VOID this payment?')) { document.getElementById('voidPaymentForm{{ payment.id }}').submit(); }">Void</button>
+                        <form id="voidPaymentForm{{ payment.id }}" action="/void_transaction/Payment/{{ payment.id }}" method="POST" style="display:none;"></form>
+                        {% endif %}
+                        {% else %}
+                        {% if current_user.role == 'admin' %}
+                        <button class="btn btn-outline-success btn-sm border-2 rounded-pill shadow-sm me-1" onclick="if(confirm('RESTORE this payment?')) { document.getElementById('unvoidPaymentForm{{ payment.id }}').submit(); }">Restore</button>
+                        <form id="unvoidPaymentForm{{ payment.id }}" action="/unvoid_transaction/Payment/{{ payment.id }}" method="POST" style="display:none;"></form>
+                        {% endif %}
+                        {% endif %}
+                        {% if current_user.role == 'admin' and not payment.is_void %}
+                        <form action="{{ url_for('delete_bill', type='Payment', id=payment.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Void payment?')">
+                            <button type="submit" class="btn btn-outline-danger btn-sm border-2 rounded-pill shadow-sm"><i class="bi bi-x-circle"></i></button>
+                        </form>
+                        {% endif %}
                     </td>
                 </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center py-5 text-white-50">No customer payments found.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% endif %}
 
+{% if party in ['supplier', 'all'] %}
+<div class="card border-0 shadow-sm mb-4" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px; overflow: hidden;">
+    <div class="card-header bg-transparent border-secondary">
+        <h5 class="text-success fw-bold mb-0">Supplier Payments</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle mb-0">
+            <thead style="background: #0f172a;">
+                <tr>
+                    <th class="fw-bold py-3 ps-4 border-bottom border-secondary text-white-50">Date</th>
+                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Supplier</th>
+                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Amount</th>
+                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Method</th>
+                    <th class="fw-bold py-3 border-bottom border-secondary text-white-50">Note</th>
+                    <th class="fw-bold py-3 text-end pe-4 border-bottom border-secondary text-white-50">Actions</th>
+                </tr>
+            </thead>
+            <tbody style="background: #1e293b;">
+                {% for p in supplier_payments %}
+                <tr style="border-bottom: 1px solid #334155; {% if p.is_void %}opacity: 0.5; text-decoration: line-through;{% endif %}">
+                    <td class="ps-4">{{ p.date_posted.strftime('%Y-%m-%d') if p.date_posted else '' }}</td>
+                    <td>
+                        {% set supplier_name = p.supplier.name if p.supplier else ('Supplier #' ~ p.supplier_id) %}
+                        <a href="{{ url_for('supplier_ledger', id=p.supplier_id) }}" class="text-decoration-none text-info fw-bold">{{ supplier_name }}</a>
+                    </td>
+                    <td class="text-success fw-bold">{{ currency_symbol }}{{ "%.2f"|format(p.amount or 0) }}</td>
+                    <td class="text-info">{{ p.method or '-' }}</td>
+                    <td class="text-white-50">{{ p.note or '-' }}</td>
+                    <td class="text-end pe-4">
+                        <a href="{{ url_for('download_supplier_payment', payment_id=p.id) }}" class="btn btn-outline-warning btn-sm border-2 rounded-pill shadow-sm me-1" title="Download PDF"><i class="bi bi-download"></i></a>
+                        <a href="{{ url_for('download_supplier_payment', payment_id=p.id) }}?action=print" target="_blank" class="btn btn-outline-success btn-sm border-2 rounded-pill shadow-sm me-1" title="Print PDF"><i class="bi bi-printer"></i></a>
+                        <button type="button" class="btn btn-outline-warning btn-sm border-2 rounded-pill shadow-sm me-1" data-bs-toggle="modal" data-bs-target="#editSupplierPaymentModal{{ p.id }}" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        {% if not p.is_void %}
+                        <form action="{{ url_for('delete_supplier_payment', id=p.id) }}" method="POST" class="d-inline">
+                            <input type="hidden" name="return_to" value="payments">
+                            <button class="btn btn-outline-danger btn-sm border-2 rounded-pill shadow-sm me-1" onclick="return confirm('Void this supplier payment?')">Void</button>
+                        </form>
+                        {% else %}
+                        <form action="{{ url_for('restore_supplier_payment', id=p.id) }}" method="POST" class="d-inline">
+                            <input type="hidden" name="return_to" value="payments">
+                            <button class="btn btn-outline-success btn-sm border-2 rounded-pill shadow-sm me-1" onclick="return confirm('Restore this supplier payment?')">Restore</button>
+                        </form>
+                        {% endif %}
+                        <a href="{{ url_for('supplier_ledger', id=p.supplier_id) }}" class="btn btn-outline-light btn-sm border-2 rounded-pill shadow-sm">Ledger</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center py-5 text-white-50">No supplier payments found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if party in ['customer', 'all'] %}
 <div class="modal fade" id="addPaymentModal" tabindex="-1">
     <div class="modal-dialog">
         <form class="modal-content border-secondary" style="background: #1e293b;" action="/add_payment" method="POST" enctype="multipart/form-data">
             <div class="modal-header border-0">
-                <h5 class="text-warning fw-bold">New Payment</h5>
+                <h5 class="text-warning fw-bold">New Customer Payment</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -73,26 +189,68 @@
                         {% endfor %}
                     </div>
                     <div id="addPaymentClientNameDisplay" class="text-info small mt-1 fw-bold"></div>
+                    <div id="addPaymentBalanceDisplay" class="small mt-2"></div>
                 </div>
                 <div class="mb-3">
                     <label class="text-white-50 small fw-bold mb-1">AMOUNT</label>
                     <input type="number" step="0.01" name="amount" class="form-control bg-dark text-white border-secondary" required placeholder="0.00">
                 </div>
                 <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">DISCOUNT (OPTIONAL)</label>
+                    <input type="number" step="0.01" min="0" name="discount" class="form-control bg-dark text-white border-secondary" placeholder="0.00">
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">DISCOUNT REASON (OPTIONAL)</label>
+                    <input type="text" name="discount_reason" class="form-control bg-dark text-white border-secondary" placeholder="Reason for discount">
+                </div>
+                <div class="mb-3">
                     <label class="text-white-50 small fw-bold mb-1">METHOD</label>
-                    <select name="method" class="form-select bg-dark text-white border-secondary">
+                    <select name="method" class="form-select bg-dark text-white border-secondary customer-method-select" data-target="#addCustomerBankDetails">
                         <option value="Cash">Cash</option>
                         <option value="Bank">Bank Transfer</option>
                         <option value="Check">Check</option>
                     </select>
                 </div>
+                <div id="addCustomerBankDetails" style="display: none;">
+                    <div class="mb-3">
+                        <label class="text-white-50 small fw-bold mb-1">BANK NAME</label>
+                        <input type="text" name="bank_name" class="form-control bg-dark text-white border-secondary customer-bank-input">
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-white-50 small fw-bold mb-1">ACCOUNT NAME</label>
+                        <input type="text" name="account_name" class="form-control bg-dark text-white border-secondary customer-bank-input">
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-white-50 small fw-bold mb-1">ACCOUNT NUMBER</label>
+                        <input type="text" name="account_no" class="form-control bg-dark text-white border-secondary customer-bank-input">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">AUTO BILL NO</label>
+                    <input type="text" class="form-control bg-dark text-white border-secondary" value="{{ next_auto }}" readonly>
+                </div>
                 <div class="mb-3">
                     <label class="text-white-50 small fw-bold mb-1">MANUAL BILL NO</label>
                     <input type="text" name="manual_bill_no" class="form-control bg-dark text-white border-secondary">
                 </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="settle_leftover_with_discount" id="settleLeftoverWithDiscount">
+                    <label class="form-check-label text-white-50 small fw-bold" for="settleLeftoverWithDiscount">
+                        Auto-discount leftover on this Manual Bill after payment
+                    </label>
+                    <div class="small text-warning mt-1">Use only when client pays partial and you want remaining amount waived.</div>
+                </div>
                 <div class="mb-3">
                     <label class="text-white-50 small fw-bold mb-1">BILL PHOTO</label>
                     <input type="file" name="photo" class="form-control bg-dark text-white border-secondary" accept="image/*">
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">PHOTO URL (Optional)</label>
+                    <input type="url" name="photo_url" class="form-control bg-dark text-white border-secondary" placeholder="https://...">
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">NOTES</label>
+                    <textarea name="note" class="form-control bg-dark text-white border-secondary" rows="2" placeholder="Add payment notes..."></textarea>
                 </div>
             </div>
             <div class="modal-footer border-0 d-flex gap-2">
@@ -102,6 +260,61 @@
         </form>
     </div>
 </div>
+{% endif %}
+
+{% if party in ['supplier', 'all'] %}
+<div class="modal fade" id="addSupplierPaymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('add_supplier_payment') }}" method="POST" class="modal-content border-secondary" style="background: #1e293b;">
+            <input type="hidden" name="return_to" value="payments">
+            <div class="modal-header border-0">
+                <h5 class="text-success fw-bold">New Supplier Payment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">SUPPLIER</label>
+                    <select name="supplier_id" class="form-select bg-dark text-white border-secondary" required>
+                        <option value="">Select supplier...</option>
+                        {% for s in suppliers %}
+                        <option value="{{ s.id }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div id="addSupplierBalanceDisplay" class="small mt-2"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">DATE</label>
+                    <input type="date" name="date" class="form-control bg-dark text-white border-secondary datepicker" value="{{ today_date }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">AMOUNT</label>
+                    <input type="number" step="0.01" name="amount" class="form-control bg-dark text-white border-secondary" required placeholder="0.00">
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">METHOD</label>
+                    <select name="method" class="form-select bg-dark text-white border-secondary supplier-method-select" data-target="#addSupplierBankDetails">
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Check">Check</option>
+                    </select>
+                </div>
+                <div id="addSupplierBankDetails" style="display: none;">
+                    <div class="mb-3"><label class="text-white-50 small fw-bold mb-1">Bank Name</label><input type="text" name="bank_name" class="form-control bg-dark text-white border-secondary"></div>
+                    <div class="mb-3"><label class="text-white-50 small fw-bold mb-1">Account Name</label><input type="text" name="account_name" class="form-control bg-dark text-white border-secondary"></div>
+                    <div class="mb-3"><label class="text-white-50 small fw-bold mb-1">Account No</label><input type="text" name="account_no" class="form-control bg-dark text-white border-secondary"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">NOTE</label>
+                    <textarea name="note" class="form-control bg-dark text-white border-secondary" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="submit" class="btn btn-success w-100 fw-bold">Save Supplier Payment</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
 
 {% for payment in payments %}
 <div class="modal fade" id="editPaymentModal{{ payment.id }}" tabindex="-1">
@@ -115,7 +328,7 @@
                 <div class="mb-3 position-relative">
                     <label class="text-white-50 small fw-bold mb-1">CLIENT (NAME OR CODE)</label>
                     <div class="input-group">
-                        <input type="text" name="client_code" id="editPaymentClientCode{{ payment.id }}" value="{{ payment.client_code or '' }}" class="form-control bg-dark text-white border-secondary" placeholder="Search by name or code..." autocomplete="off" required onfocus="showCombobox('editPaymentClientCode{{ payment.id }}', 'editPaymentCombobox{{ payment.id }}')" oninput="filterCombobox('editPaymentClientCode{{ payment.id }}', 'editPaymentCombobox{{ payment.id }}', 'editPaymentClientNameDisplay{{ payment.id }}')">
+                        <input type="text" name="client_code" id="editPaymentClientCode{{ payment.id }}" value="{{ payment.client_code or payment.client_name or '' }}" class="form-control bg-dark text-white border-secondary" placeholder="Search by name or code..." autocomplete="off" required onfocus="showCombobox('editPaymentClientCode{{ payment.id }}', 'editPaymentCombobox{{ payment.id }}')" oninput="filterCombobox('editPaymentClientCode{{ payment.id }}', 'editPaymentCombobox{{ payment.id }}', 'editPaymentClientNameDisplay{{ payment.id }}')">
                         <button class="btn btn-outline-secondary" type="button" onclick="toggleCombobox('editPaymentClientCode{{ payment.id }}', 'editPaymentCombobox{{ payment.id }}')">
                             <i class="bi bi-chevron-down text-warning"></i>
                         </button>
@@ -135,12 +348,38 @@
                     <input type="number" step="0.01" name="amount" class="form-control bg-dark text-white border-secondary" value="{{ payment.amount }}" required>
                 </div>
                 <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">DISCOUNT</label>
+                    <input type="number" step="0.01" min="0" name="discount" class="form-control bg-dark text-white border-secondary" value="{{ payment.discount or 0 }}">
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">DISCOUNT REASON</label>
+                    <input type="text" name="discount_reason" class="form-control bg-dark text-white border-secondary" value="{{ payment.discount_reason or '' }}">
+                </div>
+                <div class="mb-3">
                     <label class="text-white-50 small fw-bold mb-1">METHOD</label>
-                    <select name="method" class="form-select bg-dark text-white border-secondary">
+                    <select name="method" class="form-select bg-dark text-white border-secondary customer-method-select" data-target="#editCustomerBankDetails{{ payment.id }}">
                         <option value="Cash" {% if payment.method == 'Cash' %}selected{% endif %}>Cash</option>
                         <option value="Bank" {% if payment.method == 'Bank' %}selected{% endif %}>Bank Transfer</option>
                         <option value="Check" {% if payment.method == 'Check' %}selected{% endif %}>Check</option>
                     </select>
+                </div>
+                <div id="editCustomerBankDetails{{ payment.id }}" style="display: {{ 'block' if payment.method in ['Bank', 'Bank Transfer', 'Check', 'Cheque'] else 'none' }};">
+                    <div class="mb-3">
+                        <label class="text-white-50 small fw-bold mb-1">BANK NAME</label>
+                        <input type="text" name="bank_name" class="form-control bg-dark text-white border-secondary customer-bank-input" value="{{ payment.bank_name or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-white-50 small fw-bold mb-1">ACCOUNT NAME</label>
+                        <input type="text" name="account_name" class="form-control bg-dark text-white border-secondary customer-bank-input" value="{{ payment.account_name or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-white-50 small fw-bold mb-1">ACCOUNT NUMBER</label>
+                        <input type="text" name="account_no" class="form-control bg-dark text-white border-secondary customer-bank-input" value="{{ payment.account_no or '' }}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">AUTO BILL NO</label>
+                    <input type="text" class="form-control bg-dark text-white border-secondary" value="{{ payment.auto_bill_no or '' }}" readonly>
                 </div>
                 <div class="mb-3">
                     <label class="text-white-50 small fw-bold mb-1">MANUAL BILL NO</label>
@@ -150,6 +389,14 @@
                     <label class="text-white-50 small fw-bold mb-1">UPDATE PHOTO</label>
                     <input type="file" name="photo" class="form-control bg-dark text-white border-secondary" accept="image/*">
                 </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">UPDATE URL</label>
+                    <input type="url" name="photo_url" class="form-control bg-dark text-white border-secondary" value="{{ payment.photo_url or '' }}" placeholder="https://...">
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">NOTES</label>
+                    <textarea name="note" class="form-control bg-dark text-white border-secondary" rows="2" placeholder="Add payment notes...">{{ payment.note or '' }}</textarea>
+                </div>
             </div>
             <div class="modal-footer border-0">
                 <button type="submit" class="btn btn-warning text-dark fw-bold w-100 py-2 rounded-pill">Save Changes</button>
@@ -158,4 +405,173 @@
     </div>
 </div>
 {% endfor %}
+
+{% for p in supplier_payments %}
+<div class="modal fade" id="editSupplierPaymentModal{{ p.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('edit_supplier_payment', id=p.id) }}" method="POST" class="modal-content border-secondary" style="background: #1e293b;">
+            <input type="hidden" name="return_to" value="payments">
+            <div class="modal-header border-0">
+                <h5 class="text-warning fw-bold">Edit Supplier Payment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">DATE</label>
+                    <input type="date" name="date" class="form-control bg-dark text-white border-secondary datepicker" value="{{ p.date_posted.strftime('%Y-%m-%d') if p.date_posted else '' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">AMOUNT</label>
+                    <input type="number" step="0.01" name="amount" class="form-control bg-dark text-white border-secondary" value="{{ p.amount }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">METHOD</label>
+                    <select name="method" class="form-select bg-dark text-white border-secondary supplier-method-select" data-target="#editSupplierBankDetails{{ p.id }}">
+                        <option value="Cash" {{ 'selected' if p.method == 'Cash' }}>Cash</option>
+                        <option value="Bank Transfer" {{ 'selected' if p.method == 'Bank Transfer' }}>Bank Transfer</option>
+                        <option value="Check" {{ 'selected' if p.method == 'Check' }}>Check</option>
+                    </select>
+                </div>
+                <div id="editSupplierBankDetails{{ p.id }}" style="display: {{ 'block' if p.method == 'Bank Transfer' else 'none' }};">
+                    <div class="mb-3"><label class="text-white-50 small fw-bold mb-1">Bank Name</label><input type="text" name="bank_name" class="form-control bg-dark text-white border-secondary" value="{{ p.bank_name or '' }}"></div>
+                    <div class="mb-3"><label class="text-white-50 small fw-bold mb-1">Account Name</label><input type="text" name="account_name" class="form-control bg-dark text-white border-secondary" value="{{ p.account_name or '' }}"></div>
+                    <div class="mb-3"><label class="text-white-50 small fw-bold mb-1">Account No</label><input type="text" name="account_no" class="form-control bg-dark text-white border-secondary" value="{{ p.account_no or '' }}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-white-50 small fw-bold mb-1">NOTE</label>
+                    <textarea name="note" class="form-control bg-dark text-white border-secondary" rows="2">{{ p.note or '' }}</textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="submit" class="btn btn-warning w-100 fw-bold text-dark">Update Supplier Payment</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fmtMoney = (value) => Number(value || 0).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    const setBalanceBadge = (node, label, value, cssClass) => {
+        if (!node) return;
+        node.innerHTML = `<span class="badge ${cssClass}">${label}: {{ currency_symbol }}${fmtMoney(value)}</span>`;
+    };
+
+    const addClientInput = document.getElementById('addPaymentClientCode');
+    const addClientBalanceDisplay = document.getElementById('addPaymentBalanceDisplay');
+    const addClientCombobox = document.getElementById('addPaymentCombobox');
+
+    const loadAddClientBalance = (rawValue) => {
+        const lookup = (rawValue || '').trim();
+        if (!addClientBalanceDisplay) return;
+        if (!lookup) {
+            addClientBalanceDisplay.innerHTML = '';
+            return;
+        }
+        addClientBalanceDisplay.innerHTML = '<span class="text-white-50">Loading balance...</span>';
+        fetch(`/api/client_financial_summary/${encodeURIComponent(lookup)}`, { cache: 'no-store' })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.found) {
+                    addClientBalanceDisplay.innerHTML = '<span class="badge bg-secondary">No balance found</span>';
+                    return;
+                }
+                const balance = Number(data.balance || 0);
+                if (balance > 0) {
+                    setBalanceBadge(addClientBalanceDisplay, 'Total Due', balance, 'bg-danger');
+                } else if (balance < 0) {
+                    setBalanceBadge(addClientBalanceDisplay, 'Advance Payment', Math.abs(balance), 'bg-success');
+                } else {
+                    setBalanceBadge(addClientBalanceDisplay, 'Settled', 0, 'bg-secondary');
+                }
+            })
+            .catch(() => {
+                addClientBalanceDisplay.innerHTML = '';
+            });
+    };
+
+    if (addClientInput) {
+        let clientBalanceTimer = null;
+        const scheduleClientBalance = () => {
+            if (clientBalanceTimer) clearTimeout(clientBalanceTimer);
+            clientBalanceTimer = setTimeout(() => loadAddClientBalance(addClientInput.value), 250);
+        };
+        addClientInput.addEventListener('input', scheduleClientBalance);
+        addClientInput.addEventListener('change', scheduleClientBalance);
+        addClientInput.addEventListener('blur', scheduleClientBalance);
+        if (addClientCombobox) {
+            addClientCombobox.addEventListener('click', () => {
+                setTimeout(() => loadAddClientBalance(addClientInput.value), 0);
+            });
+        }
+    }
+
+    const addSupplierSelect = document.querySelector('#addSupplierPaymentModal select[name="supplier_id"]');
+    const addSupplierBalanceDisplay = document.getElementById('addSupplierBalanceDisplay');
+    const loadSupplierBalance = (supplierId) => {
+        if (!addSupplierBalanceDisplay) return;
+        if (!supplierId) {
+            addSupplierBalanceDisplay.innerHTML = '';
+            return;
+        }
+        addSupplierBalanceDisplay.innerHTML = '<span class="text-white-50">Loading balance...</span>';
+        fetch(`/api/supplier_balance/${supplierId}`, { cache: 'no-store' })
+            .then(response => response.json())
+            .then(data => {
+                const balance = Number(data.balance || 0);
+                if (balance > 0) {
+                    setBalanceBadge(addSupplierBalanceDisplay, 'Total Due', balance, 'bg-danger');
+                } else if (balance < 0) {
+                    setBalanceBadge(addSupplierBalanceDisplay, 'Advance Payment', Math.abs(balance), 'bg-success');
+                } else {
+                    setBalanceBadge(addSupplierBalanceDisplay, 'Settled', 0, 'bg-secondary');
+                }
+            })
+            .catch(() => {
+                addSupplierBalanceDisplay.innerHTML = '';
+            });
+    };
+
+    if (addSupplierSelect) {
+        addSupplierSelect.addEventListener('change', () => loadSupplierBalance(addSupplierSelect.value));
+        if (addSupplierSelect.value) loadSupplierBalance(addSupplierSelect.value);
+    }
+
+    const refreshPaymentsWidgets = () => {
+        if (addClientInput) loadAddClientBalance(addClientInput.value);
+        if (addSupplierSelect) loadSupplierBalance(addSupplierSelect.value);
+    };
+    document.addEventListener('pware:financial-refresh', refreshPaymentsWidgets);
+
+    document.querySelectorAll('.supplier-method-select').forEach(select => {
+        const toggleTarget = () => {
+            const targetId = select.getAttribute('data-target');
+            const node = document.querySelector(targetId);
+            if (node) node.style.display = select.value === 'Bank Transfer' ? 'block' : 'none';
+        };
+        select.addEventListener('change', toggleTarget);
+        toggleTarget();
+    });
+
+    document.querySelectorAll('.customer-method-select').forEach(select => {
+        const toggleTarget = () => {
+            const targetId = select.getAttribute('data-target');
+            const node = document.querySelector(targetId);
+            if (!node) return;
+            const isBankLike = ['Bank', 'Bank Transfer', 'Check', 'Cheque'].includes(select.value);
+            node.style.display = isBankLike ? 'block' : 'none';
+            node.querySelectorAll('.customer-bank-input').forEach(input => {
+                input.required = isBankLike;
+                if (!isBankLike) input.value = '';
+            });
+        };
+        select.addEventListener('change', toggleTarget);
+        toggleTarget();
+    });
+});
+</script>
 {% endblock %}

@@ -1,8 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_required
 from models import db, Client, PendingBill, Entry, ReconBasket
 import pandas as pd
 from difflib import SequenceMatcher
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import io
 
 # Module configuration
@@ -14,6 +16,11 @@ MODULE_CONFIG = {
 }
 
 bp = Blueprint('data_lab', __name__)
+PK_TZ = ZoneInfo('Asia/Karachi')
+
+
+def pk_now():
+    return datetime.now(PK_TZ).replace(tzinfo=None)
 
 
 def read_table(file_storage):
@@ -43,6 +50,7 @@ def name_score(a, b):
 
 
 @bp.route('/', methods=['GET', 'POST'])
+@login_required
 def upload():
     if request.method == 'POST':
         index_file = request.files.get('index_file')
@@ -135,12 +143,30 @@ def upload():
                 score = name_score(fin_client, inv_client)
                 if score >= 90:
                     # GREEN: auto-save to DB (create Entry if not exists)
-                    entry = Entry(date=datetime.utcnow().date(), time=datetime.utcnow().time().isoformat(), type='OUT', material=material, client_name=fin_client or inv_client, client_code=None, qty=qty, bill_no=bill, created_by='import')
+                    now = pk_now()
+                    entry = Entry(
+                        date=now.strftime('%Y-%m-%d'),
+                        time=now.strftime('%H:%M:%S'),
+                        type='OUT',
+                        material=material,
+                        client=fin_client or inv_client,
+                        client_code=None,
+                        qty=qty,
+                        bill_no=bill,
+                        created_by='import'
+                    )
                     db.session.add(entry)
                     # ensure pending bill exists
                     pending = PendingBill.query.filter_by(bill_no=bill).first()
                     if not pending:
-                        pending = PendingBill(bill_no=bill, client_name=fin_client, client_code=None, amount=0, date=None)
+                        pending = PendingBill(
+                            bill_no=bill,
+                            client_name=fin_client or inv_client,
+                            client_code=None,
+                            amount=0,
+                            created_at=now.strftime('%Y-%m-%d %H:%M'),
+                            created_by='import'
+                        )
                         db.session.add(pending)
                     # do not add to basket (auto-applied)
                 else:
@@ -173,6 +199,7 @@ def upload():
 
 
 @bp.route('/basket')
+@login_required
 def view_basket():
     groups = {}
     for status in ['GREEN', 'YELLOW', 'RED', 'BLUE']:
@@ -183,6 +210,7 @@ def view_basket():
 
 
 @bp.route('/correct_bill', methods=['POST'])
+@login_required
 def correct_bill():
     bill_no = request.form.get('bill_no')
     client_code = request.form.get('client_code')
@@ -192,7 +220,7 @@ def correct_bill():
         return redirect(url_for('data_lab.view_basket'))
     # update PendingBill and Entry
     PendingBill.query.filter_by(bill_no=bill_no).update({'client_name': client.name, 'client_code': client.code})
-    Entry.query.filter_by(bill_no=bill_no).update({'client_name': client.name, 'client_code': client.code})
+    Entry.query.filter_by(bill_no=bill_no).update({'client': client.name, 'client_code': client.code})
     # remove basket entries for that bill
     ReconBasket.query.filter_by(bill_no=bill_no).delete()
     db.session.commit()
@@ -201,6 +229,7 @@ def correct_bill():
 
 
 @bp.route('/legacy_import', methods=['POST'])
+@login_required
 def legacy_import():
     # In legacy import mode we assume finance is 100% correct and overwrite dispatch typos.
     bill_no = request.form.get('bill_no')
@@ -213,7 +242,7 @@ def legacy_import():
         return redirect(url_for('data_lab.view_basket'))
     # find baskets and entries with that bill and overwrite
     ReconBasket.query.filter_by(bill_no=bill_no).delete()
-    Entry.query.filter_by(bill_no=bill_no).update({'client_name': pending.client_name, 'client_code': pending.client_code})
+    Entry.query.filter_by(bill_no=bill_no).update({'client': pending.client_name, 'client_code': pending.client_code})
     db.session.commit()
     flash('Legacy import applied.', 'success')
     return redirect(url_for('data_lab.view_basket'))

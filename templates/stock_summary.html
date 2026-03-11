@@ -3,13 +3,23 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <div>
         <h2 class="fw-bold text-warning mb-0"><i class="bi bi-graph-up me-2"></i>Stock Summary</h2>
-        <p class="text-white-50 small mb-0">Opening, Receiving, Dispatching, and Closing balances.</p>
+        <p class="text-white-50 small mb-0">Received vs Delivered totals with day-wise breakdown.</p>
     </div>
-    <div class="d-flex gap-2 align-items-center">
-        <div class="bg-dark border border-secondary rounded p-2 d-flex align-items-center shadow-sm">
-            <i class="bi bi-calendar3 me-2 text-warning"></i>
-            <input type="date" value="{{ sel_date }}" class="border-0 fw-bold text-white bg-transparent" style="outline: none; min-width: 130px;" onchange="location.href='?date='+this.value">
-        </div>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+        <input type="date" id="stockDateFrom" value="{{ date_from }}" class="form-control form-control-sm bg-dark text-white border-secondary" style="width: 145px;" onchange="applyStockFilters()">
+        <input type="date" id="stockDateTo" value="{{ date_to }}" class="form-control form-control-sm bg-dark text-white border-secondary" style="width: 145px;" onchange="applyStockFilters()">
+        <select id="stockMaterial" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: 220px;" onchange="applyStockFilters()">
+            <option value="">All Materials</option>
+            {% for m in materials %}
+            <option value="{{ m.name }}" {{ 'selected' if material_filter == m.name }}>{{ m.name }}</option>
+            {% endfor %}
+        </select>
+        <select id="stockCategory" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: auto;" onchange="applyStockFilters()">
+            <option value="">All Categories</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}" {{ 'selected' if category_filter|int == cat.id }}>{{ cat.name }}</option>
+            {% endfor %}
+        </select>
         <a href="/" class="btn btn-outline-light btn-sm fw-bold"><i class="bi bi-arrow-left me-1"></i> Back</a>
         <button class="btn btn-outline-success btn-sm fw-bold" onclick="window.print()">
             <i class="bi bi-printer"></i>
@@ -17,12 +27,118 @@
     </div>
 </div>
 
+<script>
+function applyStockFilters(){
+    const dateFrom = document.getElementById('stockDateFrom').value;
+    const dateTo = document.getElementById('stockDateTo').value;
+    const material = document.getElementById('stockMaterial').value;
+    const cat = document.getElementById('stockCategory').value;
+    const params = new URLSearchParams();
+    if (dateFrom) params.set('date_from', dateFrom);
+    if (dateTo) params.set('date_to', dateTo);
+    if (material) params.set('material', material);
+    if (cat) params.set('material_category', cat);
+    location.href = '/inventory/stock_summary?' + params.toString();
+}
+</script>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px;">
+            <div class="card-body text-center">
+                <div class="text-white-50 small text-uppercase fw-bold mb-1">Total Received</div>
+                <div class="text-success fw-bold fs-4">{{ "%.2f"|format(grand_received) }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px;">
+            <div class="card-body text-center">
+                <div class="text-white-50 small text-uppercase fw-bold mb-1">Total Delivered</div>
+                <div class="text-info fw-bold fs-4">{{ "%.2f"|format(grand_delivered) }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px;">
+            <div class="card-body text-center">
+                <div class="text-white-50 small text-uppercase fw-bold mb-1">Net Stock Movement</div>
+                <div class="fw-bold fs-4 {{ 'text-warning' if grand_net >= 0 else 'text-danger' }}">{{ "%.2f"|format(grand_net) }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card border-0 shadow-sm mb-4" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px; overflow: hidden;">
+    <div class="card-header bg-transparent border-secondary">
+        <h5 class="mb-0 text-warning fw-bold">Material-Wise Totals ({{ date_from }} to {{ date_to }})</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle mb-0 text-center">
+            <thead style="background: #0f172a;">
+                <tr class="small text-uppercase">
+                    <th class="ps-4 text-white-50 text-start py-3">Material</th>
+                    <th class="text-success py-3">Received</th>
+                    <th class="text-info py-3">Delivered</th>
+                    <th class="text-warning py-3">Net</th>
+                </tr>
+            </thead>
+            <tbody style="background: #1e293b;">
+                {% for row in totals_by_material %}
+                <tr style="border-bottom: 1px solid #334155;">
+                    <td class="text-start ps-4 text-warning fw-bold">{{ row.material }}</td>
+                    <td class="text-success fw-bold">{{ "%.2f"|format(row.received) }}</td>
+                    <td class="text-info fw-bold">{{ "%.2f"|format(row.delivered) }}</td>
+                    <td class="fw-bold {{ 'text-warning' if row.net >= 0 else 'text-danger' }}">{{ "%.2f"|format(row.net) }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-center py-4 text-white-50">No transactions found in this range.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px; overflow: hidden;">
+    <div class="card-header bg-transparent border-secondary">
+        <h5 class="mb-0 text-info fw-bold">Day-Wise Totals</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle mb-0 text-center">
+            <thead style="background: #0f172a;">
+                <tr class="small text-uppercase">
+                    <th class="ps-4 text-white-50 text-start py-3">Date</th>
+                    <th class="text-success py-3">Received</th>
+                    <th class="text-info py-3">Delivered</th>
+                    <th class="text-warning py-3">Net</th>
+                </tr>
+            </thead>
+            <tbody style="background: #1e293b;">
+                {% for row in day_wise %}
+                <tr style="border-bottom: 1px solid #334155;">
+                    <td class="text-start ps-4 text-white">{{ row.date }}</td>
+                    <td class="text-success fw-bold">{{ "%.2f"|format(row.received) }}</td>
+                    <td class="text-info fw-bold">{{ "%.2f"|format(row.delivered) }}</td>
+                    <td class="fw-bold {{ 'text-warning' if row.net >= 0 else 'text-danger' }}">{{ "%.2f"|format(row.net) }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-center py-4 text-white-50">No day-wise data found in this range.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px; overflow: hidden;">
+    <div class="card-header bg-transparent border-secondary">
+        <h5 class="mb-0 text-warning fw-bold">Selected Date Snapshot ({{ sel_date }})</h5>
+    </div>
     <div class="table-responsive">
         <table class="table table-dark table-hover align-middle mb-0 text-center">
             <thead style="background: #0f172a;">
                 <tr class="small text-uppercase">
                     <th class="ps-4 text-white-50 text-start py-3">Material Brand</th>
+                    <th class="text-white-50 py-3">Category</th>
                     <th class="text-white-50 py-3">Opening</th>
                     <th class="text-success py-3">Stock In</th>
                     <th class="text-info py-3">Stock Out</th>
@@ -35,6 +151,7 @@
                 {% for s in stats %}
                 <tr style="border-bottom: 1px solid #334155;">
                     <td class="text-start ps-4 fw-bold text-warning">{{ s.name }}</td>
+                    <td class="text-white-50 small">{{ s.category or 'General' }}</td>
                     <td class="text-white-50">{{ s.opening|int }}</td>
                     <td class="text-success fw-bold">+{{ s.in|int }}</td>
                     <td class="text-info fw-bold">-{{ s.out|int }}</td>
@@ -45,6 +162,8 @@
                     </td>
                     <td class="text-end pe-4 fw-bold" id="diff-{{ loop.index }}">--</td>
                 </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center py-4 text-white-50">No snapshot data found.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

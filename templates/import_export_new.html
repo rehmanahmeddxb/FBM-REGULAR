@@ -3,252 +3,178 @@
 {% block content %}
 <div class="container-fluid">
     <h2 class="mt-4 mb-4 text-warning fw-bold">Import / Export Center</h2>
-    
-    <!-- SEPARATE OPERATIONS -->
-    <div class="row g-4 mb-5">
-        <!-- Clients -->
-        <div class="col-md-4">
-            <div class="card h-100 border-secondary bg-dark text-white">
-                <div class="card-header border-secondary bg-transparent">
-                    <h5 class="card-title mb-0 text-info"><i class="bi bi-people me-2"></i>Clients</h5>
-                </div>
-                <div class="card-body">
-                    <p class="text-white-50 small">Manage customer directory data.</p>
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-info" onclick="openImportModal('clients')">
-                            <i class="bi bi-upload me-2"></i>Import Clients
-                        </button>
-                        <div class="btn-group">
-                            <a href="{{ url_for('import_export.export_data', dataset='clients', format='excel') }}" class="btn btn-outline-light"><i class="bi bi-file-earmark-excel"></i> Excel</a>
-                            <a href="{{ url_for('import_export.export_data', dataset='clients', format='csv') }}" class="btn btn-outline-light"><i class="bi bi-filetype-csv"></i> CSV</a>
-                        </div>
-                        <a href="{{ url_for('import_export.get_template', dataset='clients') }}" class="btn btn-sm btn-link text-white-50">Download Template</a>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Dispatch -->
-        <div class="col-md-4">
-            <div class="card h-100 border-secondary bg-dark text-white">
-                <div class="card-header border-secondary bg-transparent">
-                    <h5 class="card-title mb-0 text-warning"><i class="bi bi-truck me-2"></i>Dispatch</h5>
-                </div>
-                <div class="card-body">
-                    <p class="text-white-50 small">Daily dispatch entries and stock out.</p>
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-warning" onclick="openImportModal('dispatch')">
-                            <i class="bi bi-upload me-2"></i>Import Dispatch
-                        </button>
-                        <div class="btn-group">
-                            <a href="{{ url_for('import_export.export_data', dataset='dispatch', format='excel') }}" class="btn btn-outline-light"><i class="bi bi-file-earmark-excel"></i> Excel</a>
-                            <a href="{{ url_for('import_export.export_data', dataset='dispatch', format='csv') }}" class="btn btn-outline-light"><i class="bi bi-filetype-csv"></i> CSV</a>
-                        </div>
-                        <a href="{{ url_for('import_export.get_template', dataset='dispatch') }}" class="btn btn-sm btn-link text-white-50">Download Template</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pending Bills -->
-        <div class="col-md-4">
-            <div class="card h-100 border-secondary bg-dark text-white">
-                <div class="card-header border-secondary bg-transparent">
-                    <h5 class="card-title mb-0 text-danger"><i class="bi bi-receipt me-2"></i>Pending Bills</h5>
-                </div>
-                <div class="card-body">
-                    <p class="text-white-50 small">Financial records and unpaid bills.</p>
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-danger" onclick="openImportModal('pending_bills')">
-                            <i class="bi bi-upload me-2"></i>Import Bills
-                        </button>
-                        <div class="btn-group">
-                            <a href="{{ url_for('import_export.export_data', dataset='pending_bills', format='excel') }}" class="btn btn-outline-light"><i class="bi bi-file-earmark-excel"></i> Excel</a>
-                            <a href="{{ url_for('import_export.export_data', dataset='pending_bills', format='csv') }}" class="btn btn-outline-light"><i class="bi bi-filetype-csv"></i> CSV</a>
-                        </div>
-                        <a href="{{ url_for('import_export.get_template', dataset='pending_bills') }}" class="btn btn-sm btn-link text-white-50">Download Template</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- JOINT / MASTER OPERATION -->
-    <div class="card border-success bg-dark text-white mb-5">
-        <div class="card-header border-success bg-transparent">
-            <h5 class="card-title mb-0 text-success"><i class="bi bi-database me-2"></i>Joint Master Backup (All Data)</h5>
+    <div class="card border-success bg-dark text-white mb-4">
+        <div class="card-header border-success bg-transparent d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0 text-success"><i class="bi bi-arrow-left-right me-2"></i>Full XLSX Transfer</h5>
+            <span class="small text-white-50">Single file, full tenant data</span>
         </div>
         <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <p class="mb-0 text-white-50">Perform a full system backup or restore. This includes Clients, Dispatch Entries, and Pending Bills in a single file.</p>
-                </div>
-                <div class="col-md-4 text-end">
-                    <button class="btn btn-success me-2" onclick="openMasterImport()">
-                        <i class="bi bi-upload me-2"></i>Joint Import
-                    </button>
-                    <a href="{{ url_for('import_export.export_master') }}" class="btn btn-outline-success">
-                        <i class="bi bi-download me-2"></i>Joint Export
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- CUSTOM REPORT EXPORT -->
-    <div class="card border-secondary bg-dark text-white mb-5">
-        <div class="card-header border-secondary bg-transparent">
-            <h5 class="card-title mb-0 text-white"><i class="bi bi-filter-square me-2"></i>Custom Export Reports</h5>
-        </div>
-        <div class="card-body">
-            <form action="{{ url_for('import_export.export_data') }}" method="GET" class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label small text-white-50">Dataset</label>
-                    <select name="dataset" class="form-select bg-dark text-white border-secondary">
-                        <option value="dispatch">Dispatch Entries</option>
-                        <option value="pending_bills">Pending Bills</option>
-                        <option value="clients">Clients</option>
+            <div class="row g-2 align-items-end">
+                {% if current_user.role == 'root' %}
+                <div class="col-md-4">
+                    <label class="form-label small text-white-50 mb-1">Root Scope</label>
+                    <select id="rootScopeSelect" class="form-select bg-dark text-white border-secondary" onchange="toggleRootTenantPicker()">
+                        <option value="all_tenants">All Tenants</option>
+                        <option value="tenant">Single Tenant</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label small text-white-50">From Date</label>
-                    <input type="date" name="start_date" class="form-control bg-dark text-white border-secondary">
+                <div class="col-md-8" id="rootTenantPicker" style="display:none;">
+                    <label class="form-label small text-white-50 mb-1">Target Tenant</label>
+                    <select id="rootTenantIdSelect" class="form-select bg-dark text-white border-secondary">
+                        <option value="">Select tenant</option>
+                        {% for t in tenants %}
+                        <option value="{{ t.id }}">{{ t.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label small text-white-50">To Date</label>
-                    <input type="date" name="end_date" class="form-control bg-dark text-white border-secondary">
+                {% else %}
+                <div class="col-md-12">
+                    <p class="mb-0 small text-white-50">Tenant scope is enforced automatically for admin users.</p>
                 </div>
-                <div class="col-md-3">
-                    <div class="btn-group w-100">
-                        <button type="submit" name="format" value="excel" class="btn btn-success fw-bold"><i class="bi bi-file-earmark-excel"></i> Excel</button>
-                        <button type="submit" name="format" value="csv" class="btn btn-info fw-bold"><i class="bi bi-filetype-csv"></i> CSV</button>
-                    </div>
-                </div>
-            </form>
+                {% endif %}
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Import Modal -->
-<div class="modal fade" id="importModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark text-white border-secondary">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title" id="importModalLabel">Import Data</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card h-100 border-success bg-dark text-white">
+                <div class="card-header border-success bg-transparent">
+                    <h5 class="card-title mb-0 text-success"><i class="bi bi-download me-2"></i>Export Full XLSX</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-white-50">Downloads a single XLSX file containing all tenant data (master backup).</p>
+                    <form method="POST" action="{{ url_for('import_export.transfer_export') }}" onsubmit="return applyScopeToForm(this)">
+                        <input type="hidden" name="sections" value="literal_all">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-file-earmark-excel me-2"></i>Export XLSX
+                        </button>
+                    </form>
+                </div>
             </div>
-            <div class="modal-body">
-                <input type="hidden" id="targetDataset">
-                <div class="mb-3">
-                    <label class="form-label">Select File (Excel/CSV)</label>
-                    <input type="file" id="importFile" class="form-control bg-dark text-white border-secondary" accept=".csv, .xlsx, .xls">
-                </div>
-                
-                <div id="configSection">
-                    <div class="mb-3">
-                        <label class="form-label">Duplicate Strategy</label>
-                        <select id="conflictStrategy" class="form-select bg-dark text-white border-secondary">
-                            <option value="skip">Skip Duplicates</option>
-                            <option value="update">Update Existing</option>
-                        </select>
-                    </div>
-                    <div class="mb-3" id="missingClientDiv">
-                        <label class="form-label">Missing Client Strategy</label>
-                        <select id="missingClientStrategy" class="form-select bg-dark text-white border-secondary">
-                            <option value="create">Auto-Create Client</option>
-                            <option value="skip">Skip Record</option>
-                        </select>
-                    </div>
-                </div>
+        </div>
 
-                <div id="importResult" class="mt-3"></div>
-            </div>
-            <div class="modal-footer border-secondary">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="executeImport()">Start Import</button>
+        <div class="col-lg-6">
+            <div class="card h-100 border-warning bg-dark text-white">
+                <div class="card-header border-warning bg-transparent">
+                    <h5 class="card-title mb-0 text-warning"><i class="bi bi-upload me-2"></i>Import Full XLSX</h5>
+                </div>
+                <div class="card-body">
+                    {% if full_raw_import_enabled %}
+                    <p class="text-white-50">Upload a single XLSX file. Choose append or overwrite for tenant data.</p>
+                    <form method="POST" action="{{ url_for('import_export.transfer_import') }}" enctype="multipart/form-data" onsubmit="return applyScopeToForm(this)">
+                        <input type="hidden" name="sections" value="literal_all">
+                        <div class="mb-3">
+                            <label class="form-label small text-white-50 mb-1">XLSX File</label>
+                            <input type="file" name="file" class="form-control bg-dark text-white border-secondary" accept=".xlsx" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small text-white-50 mb-1">Import Mode</label>
+                            <select name="mode" class="form-select bg-dark text-white border-secondary">
+                                <option value="append">Append (safe)</option>
+                                <option value="replace_tenant_data">Overwrite Tenant Data</option>
+                            </select>
+                            <div class="small text-white-50 mt-2">Overwrite will remove existing tenant data before import.</div>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100" onclick="return confirmOverwrite(this)">
+                            <i class="bi bi-arrow-repeat me-2"></i>Import XLSX
+                        </button>
+                    </form>
+                    {% if full_raw_import_report %}
+                    <div class="mt-3 small text-white-50">
+                        Latest import report:
+                        <span class="text-white">{{ full_raw_import_report.name }}</span>
+                        {% if full_raw_import_report.created_at %}
+                        <span class="text-muted">({{ full_raw_import_report.created_at }})</span>
+                        {% endif %}
+                        {% if full_raw_import_report.mode %}
+                        <div class="text-muted">Mode: {{ full_raw_import_report.mode }}</div>
+                        {% endif %}
+                        {% if full_raw_import_report.scope %}
+                        <div class="text-muted">Scope: {{ full_raw_import_report.scope }}</div>
+                        {% endif %}
+                        {% if full_raw_import_report.tenant_name %}
+                        <div class="text-muted">Tenant: {{ full_raw_import_report.tenant_name }}</div>
+                        {% endif %}
+                        {% if full_raw_import_report.inserted is not none %}
+                        <div class="text-muted">Inserted: {{ full_raw_import_report.inserted }}, Skipped: {{ full_raw_import_report.skipped }}, Tables: {{ full_raw_import_report.tables }}</div>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('import_export.full_raw_import_report', report_name=full_raw_import_report.name) }}" class="btn btn-outline-info btn-sm mt-2">
+                        <i class="bi bi-download me-2"></i>Download Import Report
+                    </a>
+                    {% endif %}
+                    {% else %}
+                    <div class="small text-white-50">
+                        Import is disabled by safety toggle.
+                        Set <code>FULL_RAW_IMPORT_ENABLED=1</code> to enable.
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-let isMaster = false;
-
-function openImportModal(dataset) {
-    isMaster = false;
-    document.getElementById('targetDataset').value = dataset;
-    document.getElementById('importModalLabel').innerText = 'Import ' + dataset.toUpperCase().replace('_', ' ');
-    document.getElementById('configSection').style.display = 'block';
-    document.getElementById('importResult').innerHTML = '';
-    document.getElementById('importFile').value = '';
-    
-    if(dataset === 'clients') {
-        document.getElementById('missingClientDiv').style.display = 'none';
-    } else {
-        document.getElementById('missingClientDiv').style.display = 'block';
+function getScopeSelection() {
+    const isRoot = {{ 'true' if current_user.role == 'root' else 'false' }};
+    if (!isRoot) {
+        return { scope: 'tenant', tenantId: '' };
     }
-    
-    new bootstrap.Modal(document.getElementById('importModal')).show();
-}
-
-function openMasterImport() {
-    isMaster = true;
-    document.getElementById('importModalLabel').innerText = 'Joint Master Import';
-    document.getElementById('configSection').style.display = 'none'; // Master handles logic internally
-    document.getElementById('importResult').innerHTML = '';
-    document.getElementById('importFile').value = '';
-    new bootstrap.Modal(document.getElementById('importModal')).show();
-}
-
-function executeImport() {
-    const file = document.getElementById('importFile').files[0];
-    if(!file) return alert("Please select a file");
-    
-    const btn = document.querySelector('#importModal .btn-primary');
-    btn.disabled = true;
-    btn.innerText = 'Importing...';
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    let url = "{{ url_for('import_export.execute_import') }}";
-    if (isMaster) {
-        url = "{{ url_for('import_export.import_master') }}";
-    } else {
-        formData.append('dataset_type', document.getElementById('targetDataset').value);
-        formData.append('conflict_strategy', document.getElementById('conflictStrategy').value);
-        formData.append('missing_client_strategy', document.getElementById('missingClientStrategy').value);
+    const scopeEl = document.getElementById('rootScopeSelect');
+    const tenantEl = document.getElementById('rootTenantIdSelect');
+    const scope = scopeEl ? scopeEl.value : 'all_tenants';
+    const tenantId = tenantEl ? (tenantEl.value || '') : '';
+    if (scope === 'tenant' && !tenantId) {
+        alert('Select target tenant first.');
+        return null;
     }
-    
-    fetch(url, {
-        method: 'POST',
-        body: formData
-    })
-    .then(r => r.json())
-    .then(data => {
-        btn.disabled = false;
-        btn.innerText = 'Start Import';
-        
-        if(data.error) {
-            document.getElementById('importResult').innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
-        } else {
-            const r = data.report;
-            document.getElementById('importResult').innerHTML = `
-                <div class="alert alert-success">
-                    <strong>Success!</strong><br>
-                    Imported: ${r.imported}<br>
-                    Updated: ${r.updated}<br>
-                    Skipped: ${r.skipped}<br>
-                    Errors: ${r.errors}
-                </div>
-            `;
-        }
-    })
-    .catch(e => {
-        btn.disabled = false;
-        btn.innerText = 'Start Import';
-        alert("Error: " + e);
-    });
+    return { scope, tenantId };
 }
+
+function applyScopeToForm(form) {
+    const s = getScopeSelection();
+    if (!s) return false;
+    let scopeInput = form.querySelector('input[name="scope"]');
+    if (!scopeInput) {
+        scopeInput = document.createElement('input');
+        scopeInput.type = 'hidden';
+        scopeInput.name = 'scope';
+        form.appendChild(scopeInput);
+    }
+    scopeInput.value = s.scope;
+    let tenantInput = form.querySelector('input[name="tenant_id"]');
+    if (!tenantInput) {
+        tenantInput = document.createElement('input');
+        tenantInput.type = 'hidden';
+        tenantInput.name = 'tenant_id';
+        form.appendChild(tenantInput);
+    }
+    tenantInput.value = s.tenantId || '';
+    return true;
+}
+
+function toggleRootTenantPicker() {
+    const scopeEl = document.getElementById('rootScopeSelect');
+    const picker = document.getElementById('rootTenantPicker');
+    if (!scopeEl || !picker) return;
+    picker.style.display = scopeEl.value === 'tenant' ? '' : 'none';
+}
+
+function confirmOverwrite(btn) {
+    const form = btn && btn.form ? btn.form : null;
+    if (!form) return true;
+    const mode = form.querySelector('select[name="mode"]');
+    if (mode && mode.value === 'replace_tenant_data') {
+        return confirm('Overwrite will delete existing tenant data before import. Continue?');
+    }
+    return true;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    toggleRootTenantPicker();
+});
 </script>
 {% endblock %}

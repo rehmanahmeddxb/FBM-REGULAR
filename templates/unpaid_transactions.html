@@ -2,7 +2,10 @@
 {% block content %}
 <div class="row mb-4 align-items-center">
     <div class="col">
-        <h2 class="fw-bold text-white mb-1"><i class="bi bi-wallet2 text-warning me-2"></i>Paid & Unpaid Transactions</h2>
+        <h2 class="fw-bold text-white mb-1 d-flex align-items-center gap-2">
+            <span><i class="bi bi-wallet2 text-warning me-2"></i>Paid & Unpaid Transactions</span>
+            <span class="badge bg-warning text-dark">Filtered: {{ transactions|length }}</span>
+        </h2>
         <p class="text-white-50 mb-0">Master record of all transactions from Pending Bills</p>
     </div>
 </div>
@@ -19,6 +22,14 @@
                 </select>
             </div>
             <div class="col-md-2">
+                <label class="form-label text-white-50 small fw-bold">Include Booking Clients</label>
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" name="include_booking" value="1" id="includeBookingToggle"
+                           {% if filters.include_booking in ['1', 'true', 'on', 'yes'] %}checked{% endif %}>
+                    <label class="form-check-label text-white-50 small" for="includeBookingToggle">Show booking clients</label>
+                </div>
+            </div>
+            <div class="col-md-2">
                 <label class="form-label text-white-50 small fw-bold">Start Date</label>
                 <input type="date" name="start_date" class="form-control bg-dark text-white border-secondary datepicker" value="{{ filters.start_date or '' }}">
             </div>
@@ -28,12 +39,25 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label text-white-50 small fw-bold">Material</label>
-                <select name="material" class="form-select bg-dark text-white border-secondary">
-                    <option value="">All Materials</option>
-                    {% for mat in materials %}
-                    <option value="{{ mat.name }}" {% if filters.material == mat.name %}selected{% endif %}>{{ mat.name }}</option>
-                    {% endfor %}
-                </select>
+                <div class="position-relative">
+                    <div class="input-group">
+                        <input type="text" name="material" id="unpaidMaterialFilter" value="{{ filters.material or '' }}" class="form-control bg-dark text-white border-secondary" placeholder="Type material..." autocomplete="off" onfocus="showCombobox('unpaidMaterialFilter', 'unpaidMaterialList')" oninput="filterCombobox('unpaidMaterialFilter', 'unpaidMaterialList', 'unpaidMaterialDisplay')">
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleCombobox('unpaidMaterialFilter', 'unpaidMaterialList')">
+                            <i class="bi bi-chevron-down text-warning"></i>
+                        </button>
+                    </div>
+                    <div id="unpaidMaterialList" class="combobox-list shadow-lg" style="display: none;">
+                        <div class="combobox-item" onclick="selectComboboxItem('unpaidMaterialFilter', 'unpaidMaterialList', '', '', 'unpaidMaterialDisplay')">
+                            <span class="fw-bold text-danger">All Materials</span>
+                        </div>
+                        {% for mat in materials %}
+                        <div class="combobox-item" onclick="selectComboboxItem('unpaidMaterialFilter', 'unpaidMaterialList', '{{ mat.name }}', '{{ mat.name }}', 'unpaidMaterialDisplay')">
+                            <span class="fw-bold text-warning code-span">{{ mat.name }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div id="unpaidMaterialDisplay" class="text-info small mt-1 fw-bold"></div>
+                </div>
             </div>
             <div class="col-md-2">
                 <label class="form-label text-white-50 small fw-bold">Bill No / Nimbus</label>
@@ -68,16 +92,19 @@
                     <td class="px-4 border-slate-700 py-3">{{ t.created_at }}</td>
                     <td class="px-4 border-slate-700 py-3">
                         <div class="fw-bold">{{ t.client_name }}</div>
+                        {% if (t.client_code or '') == 'OPEN-KHATA' or (t.client_name or '')|upper == 'OPEN KHATA' %}
+                        <span class="badge bg-warning text-dark mt-1">Open Khata</span><br>
+                        {% endif %}
                         <small class="text-white-50">{{ t.client_code }}</small>
                     </td>
                     <td class="px-4 border-slate-700 py-3">
                         <div class="fw-bold">
-                            <a href="{{ url_for('view_bill', bill_no=t.bill_no|replace('#', '%23')) }}" class="text-warning text-decoration-none">{{ t.bill_no }}</a>
+                            <a href="{{ url_for('view_bill', bill_no=t.bill_no) }}" class="text-warning text-decoration-none">{{ t.bill_no }}</a>
                         </div>
                         {% if t.nimbus_no %}<small class="text-white-50">N: {{ t.nimbus_no }}</small>{% endif %}
                     </td>
                     <td class="px-4 border-slate-700 py-3">{{ t.reason }}</td>
-                    <td class="px-4 border-slate-700 py-3 text-end fw-bold">{{ "%.2f"|format(t.amount) }}</td>
+                    <td class="px-4 border-slate-700 py-3 text-end fw-bold">{{ "%.2f"|format(t.effective_amount if t.effective_amount is defined else t.amount) }}</td>
                     <td class="px-4 border-slate-700 py-3 text-center">
                         {% if t.is_paid %}
                             <span class="badge bg-success-subtle text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">PAID</span>
@@ -109,7 +136,7 @@
                                         </div>
                                         <div class="mb-3">
                                             <label class="text-white-50 small fw-bold">Amount to Receive</label>
-                                            <input type="number" step="0.01" name="amount" value="{{ t.amount }}" class="form-control bg-dark text-white border-secondary fw-bold text-success" required>
+                                            <input type="number" step="0.01" name="amount" value="{{ t.effective_amount if t.effective_amount is defined else t.amount }}" class="form-control bg-dark text-white border-secondary fw-bold text-success" required>
                                         </div>
                                         <div class="mb-3">
                                             <label class="text-white-50 small fw-bold">Method</label>
@@ -141,7 +168,7 @@
                 <tr>
                     <td colspan="4" class="text-end py-3 fw-bold text-white-50">TOTAL</td>
                     <td class="px-4 py-3 text-end fw-bold text-white fs-5">
-                        {% set total_amount = transactions|sum(attribute='amount') %}
+                        {% set total_amount = transactions|sum(attribute='effective_amount') %}
                         {{ "%.2f"|format(total_amount) }}
                     </td>
                     <td colspan="2"></td>

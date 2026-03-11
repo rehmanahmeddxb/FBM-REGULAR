@@ -193,21 +193,47 @@ document.getElementById('startImportBtn').addEventListener('click', function() {
             </div>
             <div class="col-md-2 col-6">
                 <label class="small fw-bold text-white-50">Client</label>
-                <select name="client" class="form-select bg-dark text-white border-secondary">
-                    <option value="">All Clients</option>
-                    {% for c in clients %}
-                    <option value="{{ c.name }}">{{ c.name }}</option>
-                    {% endfor %}
-                </select>
+                <div class="position-relative">
+                    <div class="input-group">
+                        <input type="text" name="client" id="exportClientFilter" class="form-control bg-dark text-white border-secondary" placeholder="Type client..." autocomplete="off" onfocus="showCombobox('exportClientFilter', 'exportClientList')" oninput="filterCombobox('exportClientFilter', 'exportClientList', 'exportClientDisplay')">
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleCombobox('exportClientFilter', 'exportClientList')">
+                            <i class="bi bi-chevron-down text-warning"></i>
+                        </button>
+                    </div>
+                    <div id="exportClientList" class="combobox-list shadow-lg" style="display: none;">
+                        <div class="combobox-item" onclick="selectComboboxItem('exportClientFilter', 'exportClientList', '', '', 'exportClientDisplay')">
+                            <span class="fw-bold text-danger">All Clients</span>
+                        </div>
+                        {% for c in clients %}
+                        <div class="combobox-item" onclick="selectComboboxItem('exportClientFilter', 'exportClientList', '{{ c.name }}', '{{ c.name }}', 'exportClientDisplay')">
+                            <span class="fw-bold text-warning code-span">{{ c.name }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div id="exportClientDisplay" class="text-info small mt-1 fw-bold"></div>
+                </div>
             </div>
             <div class="col-md-2 col-6">
                 <label class="small fw-bold text-white-50">Material</label>
-                <select name="material" class="form-select bg-dark text-white border-secondary">
-                    <option value="">All Brands</option>
-                    {% for m in materials %}
-                    <option value="{{ m.name }}">{{ m.name }}</option>
-                    {% endfor %}
-                </select>
+                <div class="position-relative">
+                    <div class="input-group">
+                        <input type="text" name="material" id="exportMaterialFilter" class="form-control bg-dark text-white border-secondary" placeholder="Type material..." autocomplete="off" onfocus="showCombobox('exportMaterialFilter', 'exportMaterialList')" oninput="filterCombobox('exportMaterialFilter', 'exportMaterialList', 'exportMaterialDisplay')">
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleCombobox('exportMaterialFilter', 'exportMaterialList')">
+                            <i class="bi bi-chevron-down text-warning"></i>
+                        </button>
+                    </div>
+                    <div id="exportMaterialList" class="combobox-list shadow-lg" style="display: none;">
+                        <div class="combobox-item" onclick="selectComboboxItem('exportMaterialFilter', 'exportMaterialList', '', '', 'exportMaterialDisplay')">
+                            <span class="fw-bold text-danger">All Brands</span>
+                        </div>
+                        {% for m in materials %}
+                        <div class="combobox-item" onclick="selectComboboxItem('exportMaterialFilter', 'exportMaterialList', '{{ m.name }}', '{{ m.name }}', 'exportMaterialDisplay')">
+                            <span class="fw-bold text-warning code-span">{{ m.name }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div id="exportMaterialDisplay" class="text-info small mt-1 fw-bold"></div>
+                </div>
             </div>
             <div class="col-md-2 col-12">
                 <label class="small fw-bold text-white-50">Type</label>

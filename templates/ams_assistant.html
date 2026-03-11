@@ -1,0 +1,104 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <div>
+        <h2 class="fw-bold text-warning mb-1"><i class="bi bi-robot me-2"></i>AMS Assistant</h2>
+        <div class="text-white-50 small">Read-only assistant: ask any data question (overview, remaining/reserved, losses, GRN, ledgers, delivered/received). No data changes allowed.</div>
+    </div>
+    <a href="/" class="btn btn-outline-light btn-sm fw-bold"><i class="bi bi-arrow-left me-1"></i> Back</a>
+</div>
+
+<div class="card border-0 shadow-sm" style="background:#1e293b;border:2px solid #475569 !important;">
+    <div class="card-body">
+        <div id="chatBox" class="p-3 rounded border border-secondary mb-3" style="background:#0f172a; min-height:320px; max-height:56vh; overflow-y:auto;"></div>
+
+        <div class="input-group">
+            <input id="chatInput" type="text" class="form-control bg-dark text-white border-secondary" placeholder="Example: Tahir Abbas total remaining cement, or Rehman full overview, or losses 2026-03-01 to 2026-03-09 with excel">
+            <button id="sendBtn" class="btn btn-warning fw-bold text-dark"><i class="bi bi-send me-1"></i>Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const chatBox = document.getElementById('chatBox');
+    const input = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function esc(s) {
+        return String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+
+    function pushMsg(role, html) {
+        const wrap = document.createElement('div');
+        wrap.className = 'mb-3';
+        const badge = role === 'user'
+            ? '<span class="badge bg-warning text-dark">You</span>'
+            : '<span class="badge bg-info text-dark">Assistant</span>';
+        wrap.innerHTML = `<div class="mb-1">${badge}</div><div class="small text-white">${html}</div>`;
+        chatBox.appendChild(wrap);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function rowsTable(rows) {
+        if (!rows || !rows.length) return '';
+        const cols = Object.keys(rows[0]).slice(0, 8);
+        let h = '<div class="table-responsive mt-2"><table class="table table-sm table-dark table-bordered align-middle mb-0">';
+        h += '<thead><tr>' + cols.map(c => `<th class="small text-white-50">${esc(c)}</th>`).join('') + '</tr></thead><tbody>';
+        rows.slice(0, 20).forEach(r => {
+            h += '<tr>' + cols.map(c => `<td class="small">${esc(r[c])}</td>`).join('') + '</tr>';
+        });
+        h += '</tbody></table></div>';
+        if (rows.length > 20) h += `<div class="small text-white-50 mt-1">Showing 20 of ${rows.length} rows.</div>`;
+        return h;
+    }
+
+    async function sendQuery() {
+        const message = (input.value || '').trim();
+        if (!message) return;
+        pushMsg('user', esc(message));
+        input.value = '';
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Working...';
+        try {
+            const resp = await fetch('/api/ams_assistant/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ message })
+            });
+            const raw = await resp.text();
+            let data = null;
+            try { data = JSON.parse(raw); } catch (_) {}
+            if (!data) {
+                pushMsg('assistant', `<span class="text-danger">Server returned non-JSON response (status ${resp.status}). Please re-login and retry.</span>`);
+                return;
+            }
+            if (!resp.ok || !data.ok) {
+                pushMsg('assistant', `<span class="text-danger">${esc(data.error || 'Request failed')}</span>`);
+                return;
+            }
+            let html = `<div class="fw-bold text-warning">${esc(data.title || 'Result')}</div>`;
+            html += `<div class="mt-1">${esc(data.answer || '')}</div>`;
+            if (data.summary && data.summary !== data.answer) {
+                html += `<div class="text-white-50 small mt-1">${esc(data.summary)}</div>`;
+            }
+            if (data.excel_url) {
+                html += `<div class="mt-2"><a class="btn btn-sm btn-success fw-bold" href="${esc(data.excel_url)}"><i class="bi bi-file-earmark-excel me-1"></i>Download Excel</a></div>`;
+            }
+            html += rowsTable(data.rows || []);
+            pushMsg('assistant', html);
+        } catch (e) {
+            pushMsg('assistant', `<span class="text-danger">Network error: ${esc(e.message || e)}. Please refresh and retry.</span>`);
+        } finally {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="bi bi-send me-1"></i>Send';
+        }
+    }
+
+    sendBtn.addEventListener('click', sendQuery);
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') sendQuery();
+    });
+})();
+</script>
+{% endblock %}

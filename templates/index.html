@@ -16,7 +16,7 @@
                 </div>
                 <h6 class="text-white-50 fw-bold text-uppercase small mb-1">Total Inventory</h6>
                 <h1 class="display-5 fw-bold text-white mb-0">{{ total_stock }}</h1>
-                <p class="text-warning small fw-bold">Bags Currently in Stock</p>
+                <p class="text-warning small fw-bold">Units Currently in Stock</p>
             </div>
         </div>
     </div>
@@ -72,7 +72,7 @@
         <div class="card border-0 shadow-sm h-100" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px; cursor: pointer; transition: transform 0.2s;" onclick="window.location.href='{{ url_for('financial_details', type='credit') }}'" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
             <div class="card-body p-4 d-flex align-items-center justify-content-between">
                 <div>
-                    <h6 class="text-white-50 fw-bold text-uppercase small mb-1">Daily Credit Given</h6>
+                    <h6 class="text-white-50 fw-bold text-uppercase small mb-1">Daily Due Amount</h6>
                     <h2 class="fw-bold text-white mb-0">Rs. {{ "{:,.0f}".format(daily_credit) }}</h2>
                 </div>
                 <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
@@ -123,7 +123,7 @@
                             <td class="text-center text-info small fw-bold">-{{ s.out|int }}</td>
                             <td class="text-end pe-4">
                                 <span class="h5 fw-bold text-warning">{{ s.stock|int }}</span>
-                                <span class="small text-white-50 ms-1">Bags</span>
+                                <span class="small text-white-50 ms-1">{{ s.unit or 'Bags' }}</span>
                             </td>
                         </tr>
                         {% endfor %}

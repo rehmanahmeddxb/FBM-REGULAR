@@ -1,13 +1,34 @@
 <!doctype html>
-<html>
+<html data-server-theme="{{ ui_theme_preference or '' }}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+    <script>
+      (function () {
+        var saved = "";
+        try { saved = localStorage.getItem("ams_theme") || ""; } catch (_) {}
+        var serverTheme = "{{ ui_theme_preference or '' }}";
+        var t = (saved || serverTheme || "").toLowerCase();
+        if (t !== "light" && t !== "dark") {
+          t = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-theme", t);
+        document.documentElement.style.colorScheme = t;
+      })();
+    </script>
     <title>Data Lab</title>
   </head>
   <body class="p-4">
     <div class="container">
+      <div class="d-flex justify-content-end mb-2">
+        <button type="button" class="theme-switch" data-theme-toggle>
+          <i class="bi bi-moon-stars-fill"></i>
+          <span class="theme-label">Dark</span>
+        </button>
+      </div>
       <h1>Data Lab - Triangulation Engine</h1>
       <form method="post" enctype="multipart/form-data">
         <div class="mb-3">
@@ -26,5 +47,11 @@
         <a class="btn btn-secondary" href="/data_lab/basket">View Basket</a>
       </form>
     </div>
+    <script src="{{ url_for('static', filename='theme.js') }}"></script>
+    <script>
+      if (window.AMSTheme) {
+        window.AMSTheme.init("{{ ui_theme_preference or '' }}");
+      }
+    </script>
   </body>
   </html>

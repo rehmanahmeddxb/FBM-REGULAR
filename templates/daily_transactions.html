@@ -2,7 +2,10 @@
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
     <div>
-        <h2 class="fw-bold text-warning">Daily Transactions</h2>
+        <h2 class="fw-bold text-warning d-flex align-items-center gap-2">
+            <span>Daily Transactions</span>
+            <span class="badge bg-warning text-dark">Filtered: {{ pagination.total if pagination else (entries|length) }}</span>
+        </h2>
         <p class="text-light small mb-0">Detailed list of stock movements for the selected day.</p>
     </div>
     <div class="bg-dark border border-secondary rounded p-2 d-flex align-items-center shadow-sm">
@@ -24,6 +27,17 @@
             <option value="{{ tcat }}" {{ 'selected' if tcat == transaction_category_filter }}>{{ tcat }}</option>
             {% endfor %}
         </select>
+        <select id="materialCategoryFilter" class="form-select form-select-sm bg-dark text-white border-secondary ms-2" style="width: auto;">
+            <option value="">All Material Cats</option>
+            {% for mcat in material_categories %}
+            <option value="{{ mcat.id }}" {{ 'selected' if material_category_filter|int == mcat.id }}>{{ mcat.name }}</option>
+            {% endfor %}
+        </select>
+        <select id="showFilter" class="form-select form-select-sm bg-dark text-white border-secondary ms-2" style="width: auto;">
+            <option value="active" {{ 'selected' if show_mode == 'active' }}>Active</option>
+            <option value="voided" {{ 'selected' if show_mode == 'voided' }}>Voided</option>
+            <option value="all" {{ 'selected' if show_mode == 'all' }}>All</option>
+        </select>
 
         <button class="btn btn-sm btn-warning ms-2" onclick="applyFilters()">Apply</button>
         <a href="/" class="btn btn-outline-light btn-sm fw-bold ms-2"><i class="bi bi-arrow-left me-1"></i> Back</a>
@@ -35,11 +49,15 @@
         const to = document.getElementById('dateTo').value;
         const cat = document.getElementById('categoryFilter').value;
         const tcat = document.getElementById('transCategoryFilter').value;
+        const mcat = document.getElementById('materialCategoryFilter').value;
+        const show = document.getElementById('showFilter').value;
         const params = new URLSearchParams();
         if (from) params.set('date_from', from);
         if (to) params.set('date_to', to);
         if (cat) params.set('category', cat);
         if (tcat) params.set('transaction_category', tcat);
+        if (mcat) params.set('material_category', mcat);
+        if (show) params.set('show', show);
         location.href = '/inventory/daily_transactions?'+params.toString();
     }
     </script>
@@ -54,6 +72,7 @@
                     <th class="text-white-50">Type</th>
                     <th class="text-white-50">Client</th>
                     <th class="text-white-50">Material</th>
+                    <th class="text-white-50">Category</th>
                     <th class="text-white-50">Qty</th>
                     <th class="text-white-50">Bill No</th>
                     <th class="text-white-50">Nimbus No</th>
@@ -63,32 +82,44 @@
             </thead>
             <tbody>
                 {% for e in entries %}
+                {% set row_key = (e.source_type or 'Entry') ~ '-' ~ e.id %}
                 <tr style="border-bottom: 1px solid #334155; {% if e.is_void %}opacity: 0.5; text-decoration: line-through;{% endif %}">
                     <td class="ps-3 text-white-50">{{ e.time }}</td>
                     <td>
                         {% if e.is_void %}
                         <span class="badge bg-danger text-white px-2 py-1 rounded-pill fw-bold me-1">VOID</span>
                         {% else %}
-                        <span class="badge {{ 'bg-success' if e.type == 'IN' else 'bg-info text-dark' }} px-3 py-2 rounded-pill fw-bold">
-                            {{ e.type }}
-                        </span>
+                            {% if e.type == 'IN' %}
+                            <span class="badge bg-success px-3 py-2 rounded-pill fw-bold">IN</span>
+                            {% elif e.type == 'OUT' %}
+                            <span class="badge bg-info text-dark px-3 py-2 rounded-pill fw-bold">OUT</span>
+                            {% elif e.type == 'PAYMENT' %}
+                            <span class="badge bg-primary px-3 py-2 rounded-pill fw-bold">PAYMENT</span>
+                            {% else %}
+                            <span class="badge bg-secondary px-3 py-2 rounded-pill fw-bold">{{ e.type }}</span>
+                            {% endif %}
                         {% endif %}
                     </td>
                     <td class="fw-bold text-white">{{ e.client or '---' }} <br><small class="text-white-50">{{ e.client_code or '' }}</small></td>
-                    <td class="text-warning fw-bold">{{ e.material }}</td>
-                    <td class="fw-bold {{ 'text-success' if e.type == 'IN' else 'text-info' }} fs-5">
+                    <td class="text-warning fw-bold">{{ e.material or '-' }}</td>
+                    <td class="text-white-50 small">{{ 'Payment' if e.type == 'PAYMENT' else (material_category_map.get(e.material, '') or 'General') }}</td>
+                    <td class="fw-bold {{ 'text-success' if e.type == 'IN' else ('text-info' if e.type == 'OUT' else ('text-success' if e.type == 'PAYMENT' else 'text-warning')) }} fs-5">
+                        {% if e.type == 'PAYMENT' %}
+                        Rs. {{ "{:,.0f}".format(e.qty or 0) }}
+                        {% else %}
                         {{ '+' if e.type == 'IN' else '-' }}{{ e.qty|int }}
+                        {% endif %}
                     </td>
                     <td class="text-white-50">
-                        {% if e.bill_no %}
-                        <a href="{{ url_for('view_bill', bill_no=e.bill_no|replace('#', '%23')) }}" class="text-warning text-decoration-none">{{ e.bill_no }}</a>
+                        {% set bill_ref = e.bill_ref or e.bill_no or e.auto_bill_no %}
+                        {% if bill_ref %}
+                            {% if e.source_type == 'Payment' %}
+                        <a href="{{ url_for('view_bill', bill_no=bill_ref, src='payment', src_id=e.id, client_name=e.client, client_code=e.client_code) }}" class="text-warning text-decoration-none">{{ bill_ref }}</a>
+                            {% else %}
+                        <a href="{{ url_for('view_bill', bill_no=bill_ref, src='entry', entry_id=e.id, client_name=e.client, client_code=e.client_code) }}" class="text-warning text-decoration-none">{{ bill_ref }}</a>
+                            {% endif %}
                         {% else %}
                         ---
-                        {% endif %}
-                        {% if e.bill_no and pending_photos.get(e.bill_no) %}
-                        <a href="{{ pending_photos.get(e.bill_no) }}" target="_blank" class="ms-1 text-warning" title="View Bill Photo">
-                            <i class="bi bi-image"></i>
-                        </a>
                         {% endif %}
                     </td>
                     <td class="text-white-50">{{ e.nimbus_no or '---' }}</td>
@@ -96,24 +127,68 @@
                     <td class="text-end pe-3">
                         {% if not e.is_void %}
                             {% if current_user.role == 'admin' or e.date == sel_date %}
-                        <button class="btn btn-warning btn-sm text-dark fw-bold rounded-pill" data-bs-toggle="modal" data-bs-target="#editLog{{ e.id }}">
+                                {% if e.source_type != 'Payment' %}
+                        <button class="btn btn-warning btn-sm text-dark fw-bold rounded-pill" data-bs-toggle="modal" data-bs-target="#editLog{{ row_key }}">
                             Edit
                         </button>
+                                {% else %}
+                        <a href="/payments?search={{ e.bill_no or e.auto_bill_no or '' }}" class="btn btn-outline-info btn-sm fw-bold rounded-pill">View Payment</a>
+                                {% endif %}
                             {% else %}
                         <span class="badge bg-secondary opacity-50"><i class="bi bi-lock"></i> Locked</span>
                             {% endif %}
                             {% if current_user.role == 'admin' %}
-                            <button class="btn btn-outline-danger btn-sm fw-bold rounded-pill ms-1" onclick="if(confirm('VOID this transaction? Stock will be reversed.')) { document.getElementById('voidForm{{ e.id }}').submit(); }">Void</button>
-                            <form id="voidForm{{ e.id }}" action="/void_transaction/Entry/{{ e.id }}" method="POST" style="display:none;"></form>
+                                {% if e.source_type == 'Payment' %}
+                            <button class="btn btn-outline-danger btn-sm fw-bold rounded-pill ms-1" onclick="if(confirm('VOID this payment?')) { document.getElementById('voidForm{{ row_key }}').submit(); }">Void</button>
+                            <form id="voidForm{{ row_key }}" action="/void_transaction/Payment/{{ e.id }}" method="POST" style="display:none;"></form>
+                                {% else %}
+                            <button class="btn btn-outline-danger btn-sm fw-bold rounded-pill ms-1" onclick="if(confirm('VOID this transaction? Stock will be reversed.')) { document.getElementById('voidForm{{ row_key }}').submit(); }">Void</button>
+                            <form id="voidForm{{ row_key }}" action="/void_transaction/Entry/{{ e.id }}" method="POST" style="display:none;"></form>
+                                {% endif %}
                             {% endif %}
+                            
+                            <!-- 3 Eyes View Options -->
+                            <div class="btn-group ms-2" role="group">
+                                {% if (e.bill_ref or e.bill_no or e.auto_bill_no) %}
+                                {% set bill_ref = e.bill_ref or e.bill_no or e.auto_bill_no %}
+                                <a href="{{ url_for('view_bill', bill_no=bill_ref, src=('payment' if e.source_type == 'Payment' else 'entry'), src_id=(e.id if e.source_type == 'Payment' else None), entry_id=(e.id if e.source_type != 'Payment' else None), client_name=e.client, client_code=e.client_code) }}" class="btn btn-sm btn-outline-info" title="View Invoice (i)">
+                                    <i class="bi bi-receipt"></i>
+                                </a>
+                                {% set meta = (bill_meta|default({})).get(e.bill_no) or (bill_meta|default({})).get(e.auto_bill_no) %}
+                                {% if meta and meta.photo_path %}
+                                <a href="{{ url_for('uploaded_file', filename=meta.photo_path) }}" target="_blank" class="btn btn-sm btn-outline-light" title="View Photo (p)">
+                                    <i class="bi bi-file-image"></i>
+                                </a>
+                                {% endif %}
+                                {% if meta and meta.photo_url %}
+                                <a href="{{ meta.photo_url }}" target="_blank" class="btn btn-sm btn-outline-light" title="View URL (u)">
+                                    <i class="bi bi-link-45deg"></i>
+                                </a>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                        {% else %}
+                        {% if e.void_reason_label %}
+                        <span class="badge bg-warning text-dark">{{ e.void_reason_label|upper }}</span>
                         {% else %}
                         <span class="badge bg-danger">VOIDED</span>
+                        {% endif %}
+                        {% if current_user.role == 'admin' %}
+                            {% if e.source_type == 'Payment' %}
+                        <button class="btn btn-outline-success btn-sm fw-bold rounded-pill ms-1" onclick="if(confirm('RESTORE this payment?')) { document.getElementById('unvoidForm{{ row_key }}').submit(); }">Restore</button>
+                        <form id="unvoidForm{{ row_key }}" action="/unvoid_transaction/Payment/{{ e.id }}" method="POST" style="display:none;"></form>
+                            {% else %}
+                        <button class="btn btn-outline-success btn-sm fw-bold rounded-pill ms-1" onclick="if(confirm('RESTORE this transaction? Stock will be reapplied.')) { document.getElementById('unvoidForm{{ row_key }}').submit(); }">Restore</button>
+                        <form id="unvoidForm{{ row_key }}" action="/unvoid_transaction/Entry/{{ e.id }}" method="POST" style="display:none;"></form>
+                            {% endif %}
+                        {% endif %}
                         {% endif %}
                     </td>
                 </tr>
 
                 <!-- Edit Modal -->
-                <div class="modal fade" id="editLog{{ e.id }}" tabindex="-1">
+                {% if e.source_type != 'Payment' %}
+                <div class="modal fade" id="editLog{{ row_key }}" tabindex="-1">
                     <div class="modal-dialog modal-lg modal-dialog-centered">
                         <div class="modal-content border-secondary shadow-lg" style="background: #1e293b; border-radius: 15px;">
                             <form action="/edit_entry/{{ e.id }}" method="POST">
@@ -141,17 +216,63 @@
                                         </div>
                                     </div>
                                     <div class="row g-3 mt-2">
-                                        <div class="col-md-6">
+                                        <div class="col-md-6 position-relative">
                                             <label class="form-label small fw-bold text-uppercase text-white">Material Brand</label>
-                                            <select name="material" class="form-select bg-dark text-white border-secondary" required>
+                                            <div class="input-group">
+                                                <input type="text"
+                                                       name="material"
+                                                       id="editDailyMaterial{{ e.id }}"
+                                                       value="{{ e.material or '' }}"
+                                                       class="form-control bg-dark text-white border-secondary"
+                                                       placeholder="Search by material name..."
+                                                       autocomplete="off"
+                                                       required
+                                                       onfocus="showCombobox('editDailyMaterial{{ e.id }}', 'editDailyMaterialList{{ e.id }}')"
+                                                       oninput="filterCombobox('editDailyMaterial{{ e.id }}', 'editDailyMaterialList{{ e.id }}', 'editDailyMaterialDisplay{{ e.id }}')">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="toggleCombobox('editDailyMaterial{{ e.id }}', 'editDailyMaterialList{{ e.id }}')">
+                                                    <i class="bi bi-chevron-down text-warning"></i>
+                                                </button>
+                                            </div>
+                                            <div id="editDailyMaterialList{{ e.id }}" class="combobox-list shadow-lg" style="display: none;">
                                                 {% for mat in materials %}
-                                                <option value="{{ mat.name }}" {{ 'selected' if e.material == mat.name }}>{{ mat.name }}</option>
+                                                <div class="combobox-item" onclick="selectComboboxItem('editDailyMaterial{{ e.id }}', 'editDailyMaterialList{{ e.id }}', '{{ mat.name }}', '{{ mat.name }}', 'editDailyMaterialDisplay{{ e.id }}')">
+                                                    <span class="fw-bold text-warning code-span">{{ mat.name }}</span>
+                                                </div>
                                                 {% endfor %}
-                                            </select>
+                                            </div>
+                                            <div id="editDailyMaterialDisplay{{ e.id }}" class="text-info small mt-1 fw-bold"></div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-6 position-relative">
                                             <label class="form-label small fw-bold text-uppercase text-white">Client</label>
-                                            <input type="text" name="client" value="{{ e.client or '' }}" class="form-control bg-dark text-white border-secondary">
+                                            <div class="input-group">
+                                                <input type="text"
+                                                       name="client"
+                                                       id="editDailyClient{{ e.id }}"
+                                                       value="{{ e.client_code or e.client or '' }}"
+                                                       class="form-control bg-dark text-white border-secondary"
+                                                       placeholder="Search by name or code..."
+                                                       autocomplete="off"
+                                                       onfocus="showCombobox('editDailyClient{{ e.id }}', 'editDailyClientList{{ e.id }}')"
+                                                       oninput="filterCombobox('editDailyClient{{ e.id }}', 'editDailyClientList{{ e.id }}', 'editDailyClientDisplay{{ e.id }}')">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="toggleCombobox('editDailyClient{{ e.id }}', 'editDailyClientList{{ e.id }}')">
+                                                    <i class="bi bi-chevron-down text-warning"></i>
+                                                </button>
+                                            </div>
+                                            <div id="editDailyClientList{{ e.id }}" class="combobox-list shadow-lg" style="display: none;">
+                                                <div class="combobox-item" onclick="selectComboboxItem('editDailyClient{{ e.id }}', 'editDailyClientList{{ e.id }}', '', '', 'editDailyClientDisplay{{ e.id }}')">
+                                                    <span class="fw-bold text-danger">No Client</span>
+                                                    <span class="ms-2 text-white-50 small">Use for receiving</span>
+                                                </div>
+                                                {% for c in clients %}
+                                                <div class="combobox-item" onclick="selectComboboxItem('editDailyClient{{ e.id }}', 'editDailyClientList{{ e.id }}', '{{ c.code }}', '{{ c.name }}', 'editDailyClientDisplay{{ e.id }}')">
+                                                    <span class="fw-bold text-warning code-span">{{ c.code }}</span>
+                                                    <span class="ms-2 text-white-50 small name-span">{{ c.name }}</span>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                            <div id="editDailyClientDisplay{{ e.id }}" class="text-info small mt-1 fw-bold">
+                                                {{ ('Name: ' + e.client) if e.client else '' }}
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="row g-3 mt-2">
@@ -168,10 +289,18 @@
                                             <input type="text" name="nimbus_no" value="{{ e.nimbus_no or '' }}" class="form-control bg-dark text-white border-secondary">
                                         </div>
                                     </div>
+                                    <div class="row g-3 mt-2">
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold text-uppercase text-white">Driver Name</label>
+                                            <input type="text" name="driver_name" value="{{ e.driver_name or '' }}" class="form-control bg-dark text-white border-secondary" placeholder="Required for OUT dispatch">
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="modal-footer border-0 pt-0 d-flex {{ 'justify-content-between' if current_user.role == 'admin' else 'justify-content-end' }}">
                                     {% if current_user.role == 'admin' %}
-                                    <a href="/delete_entry/{{ e.id }}" class="btn btn-outline-danger px-4 fw-bold rounded-pill" onclick="return confirm('Delete?')">Delete</a>
+                                    <form action="{{ url_for('delete_entry', id=e.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Void this transaction?')">
+                                        <button type="submit" class="btn btn-outline-danger px-4 fw-bold rounded-pill">Void</button>
+                                    </form>
                                     {% endif %}
                                     <button type="submit" class="btn btn-warning px-5 fw-bold rounded-pill text-dark">Update</button>
                                 </div>
@@ -179,6 +308,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
                 {% endfor %}
                 {% if not entries %}
                 <tr><td colspan="9" class="text-center py-4 text-white-50">No transactions for this date.</td></tr>
@@ -191,11 +321,11 @@
         <nav>
             <ul class="pagination pagination-sm justify-content-center mb-0">
                 {% if pagination.has_prev %}
-                <li class="page-item"><a class="page-link bg-dark border-secondary text-warning" href="{{ url_for('inventory.daily_transactions', date_from=date_from, date_to=date_to, category=category_filter, transaction_category=transaction_category_filter, page=pagination.prev_num) }}">Previous</a></li>
+                <li class="page-item"><a class="page-link bg-dark border-secondary text-warning" href="{{ url_for('inventory.daily_transactions', date_from=date_from, date_to=date_to, category=category_filter, transaction_category=transaction_category_filter, material_category=material_category_filter, show=show_mode, page=pagination.prev_num) }}">Previous</a></li>
                 {% endif %}
                 <li class="page-item active"><span class="page-link bg-warning border-warning text-dark">{{ pagination.page }}</span></li>
                 {% if pagination.has_next %}
-                <li class="page-item"><a class="page-link bg-dark border-secondary text-warning" href="{{ url_for('inventory.daily_transactions', date_from=date_from, date_to=date_to, category=category_filter, transaction_category=transaction_category_filter, page=pagination.next_num) }}">Next</a></li>
+                <li class="page-item"><a class="page-link bg-dark border-secondary text-warning" href="{{ url_for('inventory.daily_transactions', date_from=date_from, date_to=date_to, category=category_filter, transaction_category=transaction_category_filter, material_category=material_category_filter, show=show_mode, page=pagination.next_num) }}">Next</a></li>
                 {% endif %}
             </ul>
         </nav>

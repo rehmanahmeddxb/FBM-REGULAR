@@ -1,26 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-server-theme="{{ ui_theme_preference or '' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ahmed Cement - Inventory Pro</title>
+    <title>AMS SYSTEM FOR EASE</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+    <script>
+        (function () {
+            var serverTheme = "{{ ui_theme_preference or '' }}";
+            var saved = "";
+            try { saved = localStorage.getItem("ams_theme") || ""; } catch (_) {}
+            var t = (saved || serverTheme || "").toLowerCase();
+            if (t !== "light" && t !== "dark") {
+                t = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+            }
+            document.documentElement.setAttribute("data-theme", t);
+            document.documentElement.style.colorScheme = t;
+        })();
+    </script>
     
     <style>
         :root {
             --sidebar-width: 260px;
-            --bg-dark: #0f172a;
-            --card-bg: #1e293b;
-            --accent: #fbbf24;
-            --sidebar-bg: #020617;
+            --bg-dark: var(--surface-0);
+            --card-bg: var(--surface-1);
+            --sidebar-bg: var(--surface-2);
         }
 
         body {
             background-color: var(--bg-dark);
-            color: #f8fafc;
+            color: var(--text-primary);
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             overflow-x: hidden;
             margin: 0;
@@ -32,7 +44,7 @@
             height: 100vh;
             position: fixed;
             background: var(--sidebar-bg);
-            border-right: 2px solid #334155;
+            border-right: 2px solid var(--border-color);
             transition: all 0.3s;
             z-index: 1050;
             left: 0;
@@ -45,7 +57,7 @@
             flex-grow: 1;
             overflow-y: auto; /* This enables the scrollbar for the menu items */
             scrollbar-width: thin;
-            scrollbar-color: #334155 transparent;
+            scrollbar-color: var(--border-color) transparent;
         }
 
         /* Custom Scrollbar for Sidebar */
@@ -56,7 +68,7 @@
             background: transparent;
         }
         .sidebar-nav-container::-webkit-scrollbar-thumb {
-            background: #334155;
+            background: var(--border-color);
             border-radius: 10px;
         }
 
@@ -68,7 +80,7 @@
         }
 
         .nav-link {
-            color: #94a3b8;
+            color: var(--text-muted);
             padding: 12px 25px;
             display: flex;
             align-items: center;
@@ -85,6 +97,88 @@
         }
 
         .nav-link i { font-size: 1.2rem; margin-right: 15px; }
+        .nav-toggle-btn {
+            width: 100%;
+            background: transparent;
+            border: 0;
+            text-align: left;
+            justify-content: space-between;
+        }
+        .nav-toggle-label {
+            display: inline-flex;
+            align-items: center;
+        }
+        .nav-caret {
+            margin-right: 0 !important;
+            font-size: 0.9rem !important;
+            transition: transform 0.2s ease;
+        }
+        .nav-caret.rotated {
+            transform: rotate(180deg);
+        }
+        .nav-submenu {
+            display: none;
+        }
+        .nav-submenu.show {
+            display: block;
+        }
+        .nav-submenu .nav-link {
+            padding-left: 56px;
+            font-size: 0.95rem;
+        }
+
+        /* Button glow for dark UI */
+        .btn {
+            --glow: rgba(56, 189, 248, 0.28);
+            box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.15), 0 6px 16px rgba(2, 6, 23, 0.55), 0 0 12px var(--glow);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .btn:hover {
+            box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.25), 0 8px 18px rgba(2, 6, 23, 0.6), 0 0 16px var(--glow);
+            transform: translateY(-1px);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn-warning { --glow: rgba(251, 191, 36, 0.35); }
+        .btn-info { --glow: rgba(56, 189, 248, 0.35); }
+        .btn-success { --glow: rgba(34, 197, 94, 0.35); }
+        .btn-danger { --glow: rgba(239, 68, 68, 0.35); }
+        .btn-secondary { --glow: rgba(148, 163, 184, 0.25); }
+        .btn-outline-secondary { --glow: rgba(148, 163, 184, 0.2); }
+        .btn-outline-light { --glow: rgba(248, 250, 252, 0.2); }
+
+        /* Contrast hardening for dark UI */
+        .btn-outline-light {
+            color: #f8fafc !important;
+            border-color: #e2e8f0 !important;
+        }
+        .btn-outline-light:hover,
+        .btn-outline-light:focus {
+            color: #020617 !important;
+            background: #f8fafc !important;
+            border-color: #f8fafc !important;
+        }
+        .btn-outline-secondary {
+            color: #e2e8f0 !important;
+            border-color: #94a3b8 !important;
+        }
+        .btn-outline-secondary:hover,
+        .btn-outline-secondary:focus {
+            color: #020617 !important;
+            background: #cbd5e1 !important;
+            border-color: #cbd5e1 !important;
+        }
+        .btn-secondary {
+            color: #ffffff !important;
+            background: #334155 !important;
+            border-color: #334155 !important;
+        }
+        .btn-primary {
+            color: #ffffff !important;
+            background: #1d4ed8 !important;
+            border-color: #1d4ed8 !important;
+        }
         
         /* Combobox Styles */
         .combobox-list {
@@ -117,8 +211,8 @@
             left: 0;
             right: 0;
             height: 60px;
-            background: #020617;
-            border-bottom: 2px solid #334155;
+            background: var(--surface-2);
+            border-bottom: 2px solid var(--border-color);
             z-index: 1040;
             padding: 0 15px;
         }
@@ -127,7 +221,7 @@
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6);
+            background: var(--overlay);
             z-index: 1045;
         }
 
@@ -137,6 +231,47 @@
             .main-content { margin-left: 0; padding: 80px 15px 20px 15px; }
             .mobile-header { display: flex; align-items: center; justify-content: space-between; }
             .sidebar-overlay.show { display: block; }
+        }
+
+        @media print {
+            body {
+                background: #fff !important;
+                color: #000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .mobile-header,
+            .sidebar,
+            #sidebar,
+            .sidebar-overlay,
+            #sidebarOverlay,
+            .loading-overlay,
+            #loadingOverlay,
+            .modal,
+            .modal-backdrop {
+                display: none !important;
+            }
+
+            .main-content {
+                margin: 0 !important;
+                padding: 0 !important;
+                min-height: auto !important;
+            }
+
+            .container-fluid {
+                margin: 0 !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+
+            .alert {
+                display: none !important;
+            }
+
+            a[href]::after {
+                content: none !important;
+            }
         }
 
         /* Loading Overlay */
@@ -168,44 +303,124 @@
     <div class="loading-text mt-3 text-warning fw-bold">Processing...</div>
 </div>
 
+<div class="modal fade" id="taskProgressModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content bg-dark text-white border-success">
+            <div class="modal-header border-success py-2">
+                <h6 class="modal-title text-success mb-0">
+                    <i class="bi bi-arrow-repeat me-2"></i><span id="taskProgressTitle">Processing</span>
+                </h6>
+            </div>
+            <div class="modal-body">
+                <div class="small text-white-50 mb-2 d-flex justify-content-between">
+                    <span id="taskProgressText">Please wait...</span>
+                    <span id="taskProgressPercent">0%</span>
+                </div>
+                <div class="progress" style="height: 12px;">
+                    <div id="taskProgressBar"
+                         class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                         role="progressbar"
+                         style="width: 0%;"
+                         aria-valuemin="0"
+                         aria-valuemax="100"
+                         aria-valuenow="0"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="taskResultModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-success" id="taskResultCard">
+            <div class="modal-header border-success py-2">
+                <h6 class="modal-title fw-bold" id="taskResultTitle">
+                    <i class="bi bi-check-circle-fill me-2"></i>Successful
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2 fw-bold" id="taskResultHeadline">Operation completed successfully.</p>
+                <div class="small text-white-50" id="taskResultDetails"></div>
+            </div>
+            <div class="modal-footer border-secondary py-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success btn-sm" id="taskResultReloadBtn">Reload</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_user.is_authenticated %}
+<div class="modal fade" id="dueReminderModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-warning border-2">
+            <div class="modal-header border-warning">
+                <h5 class="modal-title fw-bold text-warning">
+                    <i class="bi bi-alarm-fill me-2"></i>Deadline Reminder
+                </h5>
+            </div>
+            <div class="modal-body">
+                <p class="text-white-50 mb-3">Action required. Please review and mark reminders as done.</p>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-white-50">Due entries</small>
+                    <span class="badge bg-warning text-dark" id="dueReminderCount">0</span>
+                </div>
+                <div id="dueReminderList" class="d-grid gap-2" style="max-height: 52vh; overflow-y: auto;"></div>
+                <div class="small text-white-50 mt-3">To close a reminder, open Notifications and write customer response.</div>
+            </div>
+            <div class="modal-footer border-warning">
+                <a href="/notifications" class="btn btn-outline-info fw-bold">Open Notifications</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% if current_user.is_authenticated %}
     <div class="mobile-header">
         <button class="btn btn-link text-white p-0" id="sidebarToggle">
             <i class="bi bi-list fs-2"></i>
         </button>
-        <h5 class="fw-bold text-white mb-0">AHMED <span class="text-warning">CEMENT</span></h5>
-        <a href="/logout" class="btn btn-sm btn-outline-danger rounded-pill px-3">
-            <i class="bi bi-box-arrow-right"></i>
-        </a>
+        <h5 class="fw-bold text-white mb-0">AMS <span class="text-warning">SYSTEM</span></h5>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="theme-switch" data-theme-toggle id="mobileThemeToggle">
+                <i class="bi bi-moon-stars-fill"></i>
+                <span class="theme-label">Dark</span>
+            </button>
+            <a href="/logout" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                <i class="bi bi-box-arrow-right"></i>
+            </a>
+        </div>
     </div>
 
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <div class="sidebar shadow" id="sidebar">
         <div class="p-4 text-center border-bottom border-secondary border-opacity-25">
-            <h4 class="fw-bold text-white mb-0">AHMED <span class="text-warning">CEMENT</span></h4>
-            <small class="text-white-50 text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">Inventory System</small>
+            <h4 class="fw-bold text-white mb-0">AMS <span class="text-warning">SYSTEM</span></h4>
+            <small class="text-white-50 text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">FOR EASE</small>
         </div>
 
         <div class="sidebar-nav-container">
             <nav class="py-3">
+                {% if current_user.role != 'root' %}
+                {% if current_user.can_view_dashboard or current_user.role == 'admin' %}
                 <a href="/" class="nav-link {{ 'active' if request.path == '/' }}" onclick="closeSidebar()">
                     <i class="bi bi-speedometer2"></i> Dashboard
                 </a>
+                {% endif %}
 
                 <div class="text-white-50 small fw-bold px-4 mt-4 mb-2 text-uppercase" style="font-size: 0.7rem;">Inventory</div>
                 
                 {% if current_user.can_view_stock or current_user.role == 'admin' %}
-                <a href="/grn" class="nav-link {{ 'active' if request.path == '/grn' }}" onclick="closeSidebar()">
-                    <i class="bi bi-box-arrow-in-down"></i> GRN (Receiving)
-                </a>
-                <a href="/stock_summary" class="nav-link {{ 'active' if request.path == '/stock_summary' }}" onclick="closeSidebar()">
+                <a href="{{ url_for('inventory.stock_summary') }}" class="nav-link {{ 'active' if request.path.startswith('/inventory/stock_summary') }}" onclick="closeSidebar()">
                     <i class="bi bi-graph-up"></i> Stock Summary
                 </a>
                 {% endif %}
 
                 {% if current_user.can_view_daily or current_user.role == 'admin' %}
-                <a href="/daily_transactions" class="nav-link {{ 'active' if request.path == '/daily_transactions' }}" onclick="closeSidebar()">
+                <a href="{{ url_for('inventory.daily_transactions') }}" class="nav-link {{ 'active' if request.path.startswith('/inventory/daily_transactions') }}" onclick="closeSidebar()">
                     <i class="bi bi-list-check"></i> Daily Breakdown
                 </a>
                 {% endif %}
@@ -214,49 +429,120 @@
                 <a href="/tracking" class="nav-link {{ 'active' if request.path == '/tracking' }}" onclick="closeSidebar()">
                     <i class="bi bi-clock-history"></i> History
                 </a>
-                <a href="/bookings" class="nav-link {{ 'active' if request.path == '/bookings' }}" onclick="closeSidebar()">
-                    <i class="bi bi-bookmark-plus"></i> Bookings
-                </a>
+                {% set can_tx_grn = (current_user.can_manage_grn or current_user.role == 'admin') %}
+                {% set can_tx_booking = (current_user.can_manage_bookings or current_user.role == 'admin') %}
+                {% set can_tx_sale = (current_user.can_manage_sales or current_user.role == 'admin') %}
+                {% if can_tx_grn or can_tx_booking or can_tx_sale %}
+                {% set tx_open = request.path in ['/grn', '/bookings', '/direct_sales'] %}
+                <button type="button" class="nav-link nav-toggle-btn {{ 'active' if tx_open }}" onclick="toggleNavGroup('navTxGroup', this)">
+                    <span class="nav-toggle-label">
+                        <i class="bi bi-diagram-3"></i> Transactions
+                    </span>
+                    <i class="bi bi-chevron-down nav-caret {{ 'rotated' if tx_open }}"></i>
+                </button>
+                <div id="navTxGroup" class="nav-submenu {{ 'show' if tx_open }}">
+                    {% if can_tx_grn %}
+                    <a href="/grn" class="nav-link {{ 'active' if request.path == '/grn' }}" onclick="closeSidebar()">
+                        <i class="bi bi-box-arrow-in-down"></i> GRN (Receiving)
+                    </a>
+                    {% endif %}
+                    {% if can_tx_booking %}
+                    <a href="/bookings" class="nav-link {{ 'active' if request.path == '/bookings' }}" onclick="closeSidebar()">
+                        <i class="bi bi-bookmark-plus"></i> Bookings
+                    </a>
+                    {% endif %}
+                    {% if can_tx_sale %}
+                    <a href="/direct_sales" class="nav-link {{ 'active' if request.path == '/direct_sales' }}" onclick="closeSidebar()">
+                        <i class="bi bi-cart-check"></i> Sales
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% if current_user.can_manage_payments or current_user.role == 'admin' %}
                 <a href="/payments" class="nav-link {{ 'active' if request.path == '/payments' }}" onclick="closeSidebar()">
                     <i class="bi bi-cash-stack"></i> Payments
                 </a>
-
-                <a href="/direct_sales" class="nav-link {{ 'active' if request.path == '/direct_sales' }}" onclick="closeSidebar()">
-                    <i class="bi bi-cart-check"></i> Sales
+                {% endif %}
+                {% if current_user.can_view_delivery_rent or current_user.role == 'admin' %}
+                <a href="/delivery_rents" class="nav-link {{ 'active' if request.path == '/delivery_rents' }}" onclick="closeSidebar()">
+                    <i class="bi bi-truck"></i> Delivery Rent
                 </a>
+                {% endif %}
+                {% if current_user.can_view_client_ledger or current_user.role == 'admin' %}
                 <a href="/clients" class="nav-link {{ 'active' if request.path.startswith('/ledger') or request.path == '/clients' }}" onclick="closeSidebar()">
                     <i class="bi bi-journal-text"></i> Client Ledger
                 </a>
+                {% endif %}
+                {% if current_user.can_view_supplier_ledger or current_user.role == 'admin' %}
+                <a href="/suppliers" class="nav-link {{ 'active' if request.path == '/suppliers' }}" onclick="closeSidebar()">
+                    <i class="bi bi-journal-richtext"></i> Supplier Ledger
+                </a>
+                {% endif %}
+                {% if current_user.can_view_decision_ledger or current_user.role == 'admin' %}
                 <a href="/decision_ledger" class="nav-link {{ 'active' if request.path == '/decision_ledger' }}" onclick="closeSidebar()">
                     <i class="bi bi-clipboard-data"></i> Decision Ledger
                 </a>
                 {% endif %}
+                {% endif %}
 
+                {% if current_user.can_manage_pending_bills or current_user.role == 'admin' %}
                 <a href="/pending_bills" class="nav-link {{ 'active' if request.path == '/pending_bills' }}" onclick="closeSidebar()">
                     <i class="bi bi-receipt"></i> Pending Bills
                 </a>
+                {% endif %}
 
+                {% if current_user.can_view_reports or current_user.role == 'admin' %}
                 <a href="/unpaid_transactions" class="nav-link {{ 'active' if request.path == '/unpaid_transactions' }}" onclick="closeSidebar()">
                     <i class="bi bi-wallet2"></i> Unpaid/Paid Trans
                 </a>
+                <a href="/profit_reports" class="nav-link {{ 'active' if request.path == '/profit_reports' }}" onclick="closeSidebar()">
+                    <i class="bi bi-bar-chart-line"></i> Profit Reports
+                </a>
+                <a href="/ams_assistant" class="nav-link {{ 'active' if request.path == '/ams_assistant' }}" onclick="closeSidebar()">
+                    <i class="bi bi-robot"></i> AMS Assistant
+                </a>
+                {% endif %}
+                {% if current_user.can_manage_notifications or current_user.role == 'admin' %}
+                <a href="/notifications" class="nav-link {{ 'active' if request.path == '/notifications' }}" onclick="closeSidebar()">
+                    <i class="bi bi-bell"></i> Notifications
+                </a>
+                {% endif %}
 
                 {% if current_user.can_import_export or current_user.role == 'admin' %}
-                <a href="/import_export" class="nav-link {{ 'active' if request.path == '/import_export' }}" onclick="closeSidebar()">
+                <a href="{{ url_for('import_export.import_export_page') }}" class="nav-link {{ 'active' if request.path.startswith('/import_export') }}" onclick="closeSidebar()">
                     <i class="bi bi-arrow-left-right"></i> Import & Export
                 </a>
                 {% endif %}
 
-                {% if current_user.can_manage_directory or current_user.role == 'admin' %}
+                {% if current_user.can_manage_materials or current_user.can_manage_delivery_persons or current_user.role == 'admin' %}
                 <div class="text-white-50 small fw-bold px-4 mt-4 mb-2 text-uppercase" style="font-size: 0.7rem;">Directory</div>
+                {% if current_user.can_manage_materials or current_user.role == 'admin' %}
                 <a href="/materials" class="nav-link {{ 'active' if request.path == '/materials' }}" onclick="closeSidebar()">
                     <i class="bi bi-tags"></i> Material Brands
                 </a>
                 {% endif %}
+                {% if current_user.can_manage_delivery_persons or current_user.role == 'admin' %}
+                <a href="/delivery_persons" class="nav-link {{ 'active' if request.path == '/delivery_persons' }}" onclick="closeSidebar()">
+                    <i class="bi bi-person-badge"></i> Delivery Persons
+                </a>
+                {% endif %}
+                {% endif %}
+                {% endif %}
 
                 <div class="text-white-50 small fw-bold px-4 mt-4 mb-2 text-uppercase" style="font-size: 0.7rem;">System</div>
+                {% if current_user.role == 'root' %}
+                <a href="/tenants" class="nav-link {{ 'active' if request.path.startswith('/tenants') }}" onclick="closeSidebar()">
+                    <i class="bi bi-buildings"></i> Tenants
+                </a>
+                {% endif %}
+                {% if current_user.role != 'root' and (current_user.role == 'admin' or current_user.can_access_settings) %}
+                <a href="{{ url_for('void_audit_page') }}" class="nav-link {{ 'active' if request.path == '/void_audit' }}" onclick="closeSidebar()">
+                    <i class="bi bi-shield-check"></i> Void Audit
+                </a>
                 <a href="/settings" class="nav-link {{ 'active' if request.path == '/settings' }}" onclick="closeSidebar()">
                     <i class="bi bi-gear"></i> Settings
                 </a>
+                {% endif %}
             </nav>
         </div>
 
@@ -270,6 +556,10 @@
                     <div class="text-white-50 x-small" style="font-size: 0.7rem;">{{ current_user.role|upper }}</div>
                 </div>
             </div>
+            <button type="button" class="theme-switch w-100 mb-2 justify-content-center" data-theme-toggle id="desktopThemeToggle">
+                <i class="bi bi-moon-stars-fill"></i>
+                <span class="theme-label">Dark</span>
+            </button>
             <a href="/logout" class="btn btn-outline-danger w-100 btn-sm fw-bold py-2 rounded-pill">
                 <i class="bi bi-box-arrow-right me-2"></i> Logout
             </a>
@@ -296,13 +586,33 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
 
 <script>
+    if (window.AMSTheme) {
+        window.AMSTheme.init("{{ ui_theme_preference or '' }}");
+    }
     // Sidebar Logic
     const sidebar = document.getElementById('sidebar');
+    const sidebarNav = document.querySelector('.sidebar-nav-container');
     const overlay = document.getElementById('sidebarOverlay');
     const toggle = document.getElementById('sidebarToggle');
     const loadingOverlay = document.getElementById('loadingOverlay');
+    const taskProgressModalEl = document.getElementById('taskProgressModal');
+    const taskResultModalEl = document.getElementById('taskResultModal');
+    const taskProgressBar = document.getElementById('taskProgressBar');
+    const taskProgressPercent = document.getElementById('taskProgressPercent');
+    const taskProgressText = document.getElementById('taskProgressText');
+    const taskProgressTitle = document.getElementById('taskProgressTitle');
+    const taskResultCard = document.getElementById('taskResultCard');
+    const taskResultTitle = document.getElementById('taskResultTitle');
+    const taskResultHeadline = document.getElementById('taskResultHeadline');
+    const taskResultDetails = document.getElementById('taskResultDetails');
+    const taskResultReloadBtn = document.getElementById('taskResultReloadBtn');
+    let taskProgressModal = null;
+    let taskResultModal = null;
+    let taskProgressTimer = null;
+    let taskProgressValue = 0;
 
     function openSidebar() {
         sidebar.classList.add('show');
@@ -310,32 +620,454 @@
         document.body.style.overflow = 'hidden';
     }
 
-    function closeSidebar() {
+function closeSidebar() {
         if (sidebar) sidebar.classList.remove('show');
         if (overlay) overlay.classList.remove('show');
         document.body.style.overflow = '';
-    }
+}
+
+function toggleNavGroup(groupId, btn) {
+    const box = document.getElementById(groupId);
+    if (!box) return;
+    box.classList.toggle('show');
+    const caret = btn ? btn.querySelector('.nav-caret') : null;
+    if (caret) caret.classList.toggle('rotated');
+}
 
     if (toggle) toggle.addEventListener('click', openSidebar);
     if (overlay) overlay.addEventListener('click', closeSidebar);
 
+    // Keep sidebar scroll position across page navigation.
+    if (sidebarNav) {
+        const savedScroll = parseInt(localStorage.getItem('sidebar_scroll_top') || '0', 10);
+        if (!Number.isNaN(savedScroll) && savedScroll > 0) {
+            sidebarNav.scrollTop = savedScroll;
+        }
+        sidebarNav.addEventListener('scroll', function() {
+            localStorage.setItem('sidebar_scroll_top', String(sidebarNav.scrollTop || 0));
+        });
+    }
+
     // Global Utilities
     function showLoading() { if (loadingOverlay) loadingOverlay.classList.add('show'); }
     function hideLoading() { if (loadingOverlay) loadingOverlay.classList.remove('show'); }
+    function ensureTaskProgressModal() {
+        if (!taskProgressModalEl) return null;
+        if (!taskProgressModal) {
+            taskProgressModal = new bootstrap.Modal(taskProgressModalEl, { backdrop: 'static', keyboard: false });
+        }
+        return taskProgressModal;
+    }
+    function ensureTaskResultModal() {
+        if (!taskResultModalEl) return null;
+        if (!taskResultModal) {
+            taskResultModal = new bootstrap.Modal(taskResultModalEl);
+        }
+        return taskResultModal;
+    }
+    function setTaskProgress(value, text) {
+        const v = Math.max(0, Math.min(100, Math.floor(value || 0)));
+        taskProgressValue = v;
+        if (taskProgressBar) {
+            taskProgressBar.style.width = v + '%';
+            taskProgressBar.setAttribute('aria-valuenow', String(v));
+        }
+        if (taskProgressPercent) taskProgressPercent.textContent = v + '%';
+        if (typeof text === 'string' && taskProgressText) taskProgressText.textContent = text;
+    }
+    function startTaskProgress(title, text) {
+        const modal = ensureTaskProgressModal();
+        if (!modal) return;
+        if (taskProgressTitle) taskProgressTitle.textContent = title || 'Processing';
+        setTaskProgress(10, text || 'Please wait...');
+        if (taskProgressTimer) clearInterval(taskProgressTimer);
+        taskProgressTimer = setInterval(() => {
+            if (taskProgressValue < 90) {
+                setTaskProgress(taskProgressValue + 3);
+            }
+        }, 250);
+        modal.show();
+    }
+    function finishTaskProgress() {
+        if (taskProgressTimer) {
+            clearInterval(taskProgressTimer);
+            taskProgressTimer = null;
+        }
+        setTaskProgress(100, 'Completed');
+        setTimeout(() => {
+            if (taskProgressModal) taskProgressModal.hide();
+        }, 250);
+    }
+    function closeTaskProgressNow() {
+        if (taskProgressTimer) {
+            clearInterval(taskProgressTimer);
+            taskProgressTimer = null;
+        }
+        if (taskProgressModal) taskProgressModal.hide();
+        // Hard fallback: some browsers leave a stuck backdrop after file download.
+        setTimeout(() => {
+            if (taskProgressModalEl) {
+                taskProgressModalEl.classList.remove('show');
+                taskProgressModalEl.style.display = 'none';
+                taskProgressModalEl.setAttribute('aria-hidden', 'true');
+                taskProgressModalEl.removeAttribute('aria-modal');
+            }
+            document.querySelectorAll('.modal-backdrop').forEach((bd) => bd.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('padding-right');
+        }, 120);
+    }
+    function showTaskResult(success, headline, details) {
+        const modal = ensureTaskResultModal();
+        if (!modal) return;
+        if (taskResultCard) {
+            taskResultCard.classList.remove('border-success', 'border-danger');
+            taskResultCard.classList.add(success ? 'border-success' : 'border-danger');
+        }
+        if (taskResultTitle) {
+            taskResultTitle.className = 'modal-title fw-bold ' + (success ? 'text-success' : 'text-danger');
+            taskResultTitle.innerHTML = success
+                ? '<i class="bi bi-check-circle-fill me-2"></i>Successful'
+                : '<i class="bi bi-x-circle-fill me-2"></i>Unsuccessful';
+        }
+        if (taskResultHeadline) taskResultHeadline.textContent = headline || (success ? 'Completed.' : 'Failed.');
+        if (taskResultDetails) taskResultDetails.textContent = details || '';
+        if (taskResultReloadBtn) {
+            taskResultReloadBtn.className = 'btn btn-sm ' + (success ? 'btn-success' : 'btn-danger');
+            taskResultReloadBtn.textContent = 'Reload';
+            taskResultReloadBtn.onclick = () => window.location.reload();
+        }
+        modal.show();
+    }
+    function hasFileIntentText(text) {
+        const t = (text || '').toLowerCase();
+        if (!t) return false;
+        return /(download|excel|csv|pdf|template)/i.test(t);
+    }
+    function isFileActionUrl(rawHref) {
+        if (!rawHref) return false;
+        try {
+            const u = new URL(rawHref, window.location.origin);
+            if (u.origin !== window.location.origin) return false;
+            const p = (u.pathname || '').toLowerCase();
+            const action = (u.searchParams.get('action') || '').toLowerCase();
+            if (action === 'print') return false;
+            const fileRoutePatterns = [
+                /\/download(?:_|\/|$)/,
+                /\/export(?:_|\/|$)/,
+                /\/export_data_filter(?:\/|$)/,
+                /\/export_clients(?:\/|$)/,
+                /\/export_master(?:\/|$)/,
+                /\/full_raw_export(?:\/|$)/,
+                /\/full_raw_import_report(?:\/|$)/,
+                /\/full_raw_import_history_export(?:\/|$)/,
+                /\/get_template(?:\/|$)/,
+                /\/download_supplier_ledger(?:\/|$)/,
+                /\/download_supplier_payment(?:\/|$)/,
+                /\/download_invoice(?:\/|$)/
+            ];
+            if (fileRoutePatterns.some((rx) => rx.test(p))) return true;
+            const fmt = (u.searchParams.get('format') || '').toLowerCase();
+            if (fmt && ['csv', 'excel', 'xlsx', 'pdf'].includes(fmt)) return true;
+            return false;
+        } catch (_) {
+            return false;
+        }
+    }
+    function isFileActionLinkElement(linkEl) {
+        if (!linkEl) return false;
+        if ((linkEl.dataset && linkEl.dataset.noFileIntercept === '1') || linkEl.getAttribute('data-no-file-intercept') === '1') {
+            return false;
+        }
+        const href = linkEl.getAttribute('href') || '';
+        if (isFileActionUrl(href)) return true;
+        const hintText = [
+            linkEl.getAttribute('title') || '',
+            linkEl.textContent || '',
+            linkEl.className || ''
+        ].join(' ');
+        return hasFileIntentText(hintText);
+    }
+    function collectSaveContext(form) {
+        if (!form) return null;
+        const actionRaw = form.getAttribute('action') || window.location.pathname || '';
+        const action = actionRaw.toLowerCase();
+        const read = (name) => {
+            const el = form.querySelector(`[name="${name}"]`);
+            return el ? String(el.value || '').trim() : '';
+        };
+        if (action.includes('/add_direct_sale') || action.includes('/edit_bill/directsale')) {
+            return {
+                kind: 'direct_sale',
+                category: read('category'),
+                manual_bill_no: read('manual_bill_no'),
+                create_invoice: read('create_invoice'),
+                amount: read('amount'),
+                paid_amount: read('paid_amount')
+            };
+        }
+        if (action.includes('/add_booking') || action.includes('/edit_bill/booking')) {
+            return { kind: 'booking' };
+        }
+        if (action.includes('/add_payment') || action.includes('/edit_bill/payment')) {
+            return { kind: 'payment' };
+        }
+        if (action === '/grn' || action.includes('/edit_grn/')) {
+            return { kind: 'grn' };
+        }
+        if (action.includes('/add_pending_bill') || action.includes('/edit_pending_bill/')) {
+            return { kind: 'pending_bill' };
+        }
+        if (action.includes('/add_record') || action.includes('/edit_entry/')) {
+            return { kind: 'entry' };
+        }
+        return null;
+    }
+    function getFilenameFromHeaders(headers, fallbackName) {
+        const cd = headers.get('content-disposition') || '';
+        let fn = '';
+        const utf = cd.match(/filename\*=UTF-8''([^;]+)/i);
+        if (utf && utf[1]) fn = decodeURIComponent(utf[1]);
+        if (!fn) {
+            const ascii = cd.match(/filename="?([^"]+)"?/i);
+            if (ascii && ascii[1]) fn = ascii[1];
+        }
+        return fn || fallbackName || ('download_' + Date.now());
+    }
+    function contextSuccessText(saveCtx) {
+        if (saveCtx && saveCtx.kind === 'direct_sale') {
+            const cat = (saveCtx.category || '').trim().toLowerCase();
+            if (cat === 'booking delivery') {
+                return 'Booked Sale saved. Reserved material is dispatched in Material Ledger and linked to the client booking trail.';
+            }
+            if (cat === 'mixed transaction') {
+                return 'Booked + Due sale saved. Reserved dispatch is posted in Material Ledger and due portion appears in Client Financial Ledger.';
+            }
+            if (cat === 'credit customer') {
+                return 'Due Sale saved. Credit amount is added in Client Financial Ledger and stock movement is recorded in History.';
+            }
+            if (cat === 'cash') {
+                return 'Cash Sale saved. Payment is recorded immediately and stock movement is visible in History.';
+            }
+            if (cat === 'open khata') {
+                return 'Open Khata sale saved. Amount is tracked for follow-up in pending/financial views and stock movement is recorded.';
+            }
+            return 'Direct Sale saved. Financial and stock effects are recorded in ledger and history.';
+        }
+        if (saveCtx && saveCtx.kind === 'booking') {
+            return 'Booking saved. Added to client ledger and reserved material is visible in Material Ledger.';
+        }
+        if (saveCtx && saveCtx.kind === 'payment') {
+            return 'Payment saved. Entry posted in Financial Ledger for this client.';
+        }
+        if (saveCtx && saveCtx.kind === 'grn') {
+            return 'GRN saved. Stock updated in receiving and reflected in inventory records.';
+        }
+        if (saveCtx && saveCtx.kind === 'pending_bill') {
+            return 'Pending bill saved and available in pending section and related client financial view.';
+        }
+        if (saveCtx && saveCtx.kind === 'entry') {
+            return 'Transaction saved. History and stock movement are now updated.';
+        }
+        const path = (window.location.pathname || '').toLowerCase();
+        if (path.startsWith('/bookings')) return 'Booking saved. Added to client ledger (credit/advance) and reserved material is visible in Material Ledger.';
+        if (path.startsWith('/payments')) return 'Payment saved. Entry posted in Financial Ledger for this client.';
+        if (path.startsWith('/direct_sales')) return 'Sale saved. Financial effect is visible in Client Ledger and stock movement in History.';
+        if (path.startsWith('/grn')) return 'GRN saved. Stock updated in receiving and reflected in inventory records.';
+        if (path.startsWith('/pending_bills')) return 'Pending bill saved and available in pending section and related client financial view.';
+        if (path.startsWith('/dispatch') || path.startsWith('/inventory/daily_transactions')) return 'Transaction saved. History and stock movement are now updated.';
+        return 'Transaction saved successfully.';
+    }
+    function dispatchFinancialRefresh(reason, context) {
+        try {
+            document.dispatchEvent(new CustomEvent('pware:financial-refresh', {
+                detail: {
+                    reason: reason || 'unspecified',
+                    context: context || null,
+                    at: Date.now()
+                }
+            }));
+        } catch (_) {}
+    }
+    function extractErrorText(htmlOrText) {
+        const raw = (htmlOrText || '').replace(/\s+/g, ' ').trim();
+        if (!raw) return 'Request failed.';
+        const dangerMatch = raw.match(/alert-danger[^>]*>(.*?)</i);
+        if (dangerMatch && dangerMatch[1]) return dangerMatch[1].replace(/<[^>]*>/g, '').trim();
+        return raw.slice(0, 260);
+    }
+    async function runFileAction(opts) {
+        const url = opts.url;
+        const method = (opts.method || 'GET').toUpperCase();
+        if (typeof hideLoading === 'function') hideLoading();
+        startTaskProgress('Download / Export', 'Preparing file...');
+        setTaskProgress(30, 'Fetching data...');
+        try {
+            const fetchOpts = { method, credentials: 'same-origin', redirect: 'follow' };
+            if (method !== 'GET' && opts.formData) fetchOpts.body = opts.formData;
+            const res = await fetch(url, fetchOpts);
+            if (!res.ok) {
+                const reason = extractErrorText(await res.text());
+                closeTaskProgressNow();
+                showTaskResult(false, 'Export/Download failed.', reason);
+                return;
+            }
+
+            const contentType = (res.headers.get('content-type') || '').toLowerCase();
+            const cd = (res.headers.get('content-disposition') || '').toLowerCase();
+            if (contentType.includes('text/html') && !cd.includes('attachment')) {
+                const html = await res.text();
+                const reason = extractErrorText(html) || 'Server returned HTML instead of a file.';
+                closeTaskProgressNow();
+                showTaskResult(false, 'Export/Download unsuccessful.', reason);
+                return;
+            }
+
+            setTaskProgress(85, 'Finalizing file...');
+            const blob = await res.blob();
+            if (!blob || blob.size === 0) {
+                closeTaskProgressNow();
+                showTaskResult(false, 'Export/Download unsuccessful.', 'File was empty.');
+                return;
+            }
+            const fallback = (new URL(url, window.location.origin).pathname.split('/').pop() || 'download').replace(/[^\w\-.]+/g, '_');
+            const fileName = getFilenameFromHeaders(res.headers, fallback);
+            const objectUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = objectUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(objectUrl);
+
+            closeTaskProgressNow();
+            showTaskResult(true, 'File downloaded successfully.', `Saved as: ${fileName}`);
+        } catch (err) {
+            closeTaskProgressNow();
+            showTaskResult(false, 'Export/Download failed.', (err && err.message) ? err.message : 'Unexpected network error.');
+        }
+    }
 
     // Navigation and Form Loading States
     document.querySelectorAll('a[href]:not([href^="#"]):not([data-bs-toggle])').forEach(link => {
-        link.addEventListener('click', function() {
+        link.addEventListener('click', function(e) {
             const href = this.getAttribute('href');
-            if (href && !href.startsWith('javascript')) showLoading();
+            const target = (this.getAttribute('target') || '').toLowerCase();
+            if (sidebarNav) {
+                localStorage.setItem('sidebar_scroll_top', String(sidebarNav.scrollTop || 0));
+            }
+            if (!href || href.startsWith('javascript')) return;
+            if (target === '_blank') return;
+            if (isFileActionLinkElement(this)) {
+                e.preventDefault();
+                runFileAction({ url: href, method: 'GET' });
+                return;
+            }
+            showLoading();
         });
     });
 
     document.querySelectorAll('form').forEach(form => {
-        form.addEventListener('submit', function() { showLoading(); });
+        form.addEventListener('submit', function(e) {
+            if (e.defaultPrevented) return;
+            if (window.__disableGlobalLoading === true) return;
+            if (form.hasAttribute('data-no-global-loading')) return;
+            const rawAction = form.getAttribute('action') || '';
+            const action = rawAction.toLowerCase();
+            const method = ((form.getAttribute('method') || 'GET') + '').toUpperCase();
+            if (form.id === 'deployForm') return;
+            if (action.includes('/import_export/app_upgrade')) return;
+            if (action.includes('/import_export/master/import/start')) return;
+            const submitter = e.submitter || document.activeElement;
+            const submitterText = submitter ? [submitter.textContent || '', submitter.value || '', submitter.getAttribute('title') || '', submitter.className || ''].join(' ') : '';
+            // Only infer file intent from button text for GET forms.
+            // For POST (restore/import/etc.), rely on URL rules to avoid hijacking normal redirects.
+            const fileIntentBySubmitter = method === 'GET' && hasFileIntentText(submitterText);
+            if (isFileActionUrl(rawAction) || fileIntentBySubmitter) {
+                e.preventDefault();
+                let url = rawAction || window.location.pathname;
+                let formData = null;
+                if (method === 'GET') {
+                    const params = new URLSearchParams(new FormData(form));
+                    const u = new URL(url, window.location.origin);
+                    params.forEach((v, k) => u.searchParams.append(k, v));
+                    url = u.toString();
+                } else {
+                    formData = new FormData(form);
+                }
+                runFileAction({ url, method, formData });
+                return;
+            }
+            if (method !== 'GET') {
+                const saveCtx = collectSaveContext(form);
+                // Only transactional save forms should trigger save-result modal flow.
+                // Destructive/admin actions (e.g., wipe/delete/restore) should rely on server flash only.
+                if (saveCtx) {
+                    sessionStorage.setItem('pending_save_context', JSON.stringify(saveCtx));
+                    sessionStorage.setItem('pending_save_feedback', '1');
+                    startTaskProgress('Saving', 'Saving transaction...');
+                    return;
+                }
+                showLoading();
+                return;
+            }
+            showLoading();
+        });
     });
 
     window.addEventListener('pageshow', hideLoading);
+    window.addEventListener('load', hideLoading);
+    document.addEventListener('DOMContentLoaded', hideLoading);
+    document.addEventListener('DOMContentLoaded', function() {
+        if (taskResultReloadBtn) {
+            taskResultReloadBtn.addEventListener('click', function() {
+                window.location.reload();
+            });
+        }
+        const qs = new URLSearchParams(window.location.search);
+        const hasAutoDownloadBill = !!qs.get('download_bill');
+        const pendingSave = sessionStorage.getItem('pending_save_feedback') === '1';
+        let pendingSaveContext = null;
+        try {
+            pendingSaveContext = JSON.parse(sessionStorage.getItem('pending_save_context') || 'null');
+        } catch (_) {
+            pendingSaveContext = null;
+        }
+        if (pendingSave) {
+            sessionStorage.removeItem('pending_save_feedback');
+            sessionStorage.removeItem('pending_save_context');
+            finishTaskProgress();
+            // Auto-download redirect after save should show only one UX flow (download),
+            // not an extra save-result modal.
+            if (hasAutoDownloadBill) return;
+            const successAlert = document.querySelector('.alert.alert-success');
+            const dangerAlert = document.querySelector('.alert.alert-danger');
+            if (successAlert) {
+                const headline = (successAlert.textContent || '').trim() || 'Saved successfully.';
+                showTaskResult(true, headline, contextSuccessText(pendingSaveContext));
+                dispatchFinancialRefresh('transaction-save-success', pendingSaveContext);
+            } else if (dangerAlert) {
+                const reason = (dangerAlert.textContent || '').trim() || 'Unable to save the transaction.';
+                showTaskResult(false, 'Transaction save unsuccessful.', reason);
+            }
+        }
+        const successAlertAny = document.querySelector('.alert.alert-success');
+        if (successAlertAny) {
+            dispatchFinancialRefresh('success-alert-present', null);
+        }
+    });
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            dispatchFinancialRefresh('tab-visible', null);
+        }
+    });
+    window.addEventListener('focus', function() {
+        dispatchFinancialRefresh('window-focus', null);
+    });
+    setInterval(function() {
+        dispatchFinancialRefresh('interval', null);
+    }, 30000);
 
     // Combobox logic for reuse in sub-pages
     function toggleCombobox(inputId, listId) {
@@ -362,10 +1094,13 @@
         }
     }
 
-    function selectComboboxItem(inputId, listId, code, name, displayId) {
+    function selectComboboxItem(inputId, listId, code, name, displayId, nameInputId) {
         document.getElementById(inputId).value = code;
         document.getElementById(listId).style.display = 'none';
         if (displayId) document.getElementById(displayId).innerText = "Name: " + name;
+        if (nameInputId && document.getElementById(nameInputId)) {
+            document.getElementById(nameInputId).value = name;
+        }
     }
 
     document.addEventListener('click', function(e) {
@@ -376,24 +1111,150 @@
 
     // Date Picker initialization
     document.addEventListener('DOMContentLoaded', function() {
-        flatpickr(".datepicker, input[type='date']", {
-            dateFormat: "Y-m-d",
-            theme: "dark"
-        });
+        if (window.flatpickr) {
+            flatpickr(".datepicker, input[type='date']", {
+                dateFormat: "Y-m-d"
+            });
+        }
     });
 
     // Auto-download bill if param exists
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         const downloadBill = urlParams.get('download_bill');
+        const downloadSrc = urlParams.get('download_src');
+        const downloadSrcId = urlParams.get('download_src_id');
+        const downloadClientCode = urlParams.get('download_client_code');
+        const downloadClientName = urlParams.get('download_client_name');
         if (downloadBill) {
-            // Remove param from URL to prevent loop on refresh
-            const newUrl = window.location.pathname + window.location.search.replace(/[\?&]download_bill=[^&]+/, '').replace(/^&/, '?');
+            // Remove download params from URL to prevent loop on refresh
+            ['download_bill', 'download_src', 'download_src_id', 'download_client_code', 'download_client_name'].forEach((k) => {
+                urlParams.delete(k);
+            });
+            const remainingQs = urlParams.toString();
+            const newUrl = window.location.pathname + (remainingQs ? ('?' + remainingQs) : '');
             window.history.replaceState({}, '', newUrl);
-            // Trigger download
-            window.location.href = '/download_invoice/' + encodeURIComponent(downloadBill);
+
+            // Trigger hint-aware download to avoid bill collision ambiguity.
+            const dlParams = new URLSearchParams();
+            if (downloadSrc) dlParams.set('src', downloadSrc);
+            if (downloadSrcId) dlParams.set('src_id', downloadSrcId);
+            if (downloadClientCode) dlParams.set('client_code', downloadClientCode);
+            if (downloadClientName) dlParams.set('client_name', downloadClientName);
+            const dlUrl = '/download_invoice/' + encodeURIComponent(downloadBill) + (dlParams.toString() ? ('?' + dlParams.toString()) : '');
+            runFileAction({ url: dlUrl, method: 'GET' });
         }
     });
+
+    {% if current_user.is_authenticated %}
+    // Reminder alert audio + blocking due-reminder popup (global)
+    let alarmAudioCtx = null;
+    let dueReminderModal = null;
+    let dueReminderIds = [];
+    let dueModalVisible = false;
+
+    function ensureAudioUnlocked() {
+        try {
+            if (!alarmAudioCtx) {
+                alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (alarmAudioCtx.state === 'suspended') {
+                alarmAudioCtx.resume();
+            }
+        } catch (e) {}
+    }
+
+    function playAlarmFor10s() {
+        ensureAudioUnlocked();
+        if (!alarmAudioCtx) return;
+        const end = Date.now() + 10000;
+        const chime = () => {
+            const now = alarmAudioCtx.currentTime;
+            const tones = [
+                { freq: 659.25, start: 0.00, duration: 0.20 },
+                { freq: 783.99, start: 0.22, duration: 0.24 }
+            ];
+
+            tones.forEach((tone) => {
+                const o = alarmAudioCtx.createOscillator();
+                const g = alarmAudioCtx.createGain();
+                o.type = 'sine';
+                o.frequency.setValueAtTime(tone.freq, now + tone.start);
+                g.gain.setValueAtTime(0.0001, now + tone.start);
+                g.gain.linearRampToValueAtTime(0.08, now + tone.start + 0.02);
+                g.gain.exponentialRampToValueAtTime(0.0001, now + tone.start + tone.duration);
+                o.connect(g);
+                g.connect(alarmAudioCtx.destination);
+                o.start(now + tone.start);
+                o.stop(now + tone.start + tone.duration + 0.03);
+            });
+        };
+
+        const loop = setInterval(() => {
+            if (Date.now() >= end) {
+                clearInterval(loop);
+                return;
+            }
+            chime();
+        }, 1100);
+        chime();
+    }
+
+    function testAlarm() {
+        playAlarmFor10s();
+        alert('Alarm test started for 10 seconds.');
+    }
+
+    function renderDueReminderRows(items) {
+        const list = document.getElementById('dueReminderList');
+        const countEl = document.getElementById('dueReminderCount');
+        if (!list) return;
+        list.innerHTML = items.map(item => `
+            <div class="border border-secondary rounded p-3" id="dueRow-${item.id}">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div>
+                        <div class="fw-bold">${item.client || 'Unknown Client'} <span class="text-white-50">(${item.bill_no || 'No Bill'})</span></div>
+                        <div class="small text-warning">Due: ${item.remind_at}</div>
+                        <div class="small text-white-50">${item.note || 'No note'}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        dueReminderIds = items.map(i => i.id);
+        if (countEl) {
+            countEl.innerText = String(dueReminderIds.length);
+        }
+    }
+
+    function showDueReminderModal(items) {
+        const modalEl = document.getElementById('dueReminderModal');
+        if (!modalEl) return;
+        if (!dueReminderModal) {
+            dueReminderModal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+            modalEl.addEventListener('shown.bs.modal', () => { dueModalVisible = true; });
+            modalEl.addEventListener('hidden.bs.modal', () => { dueModalVisible = false; });
+        }
+        renderDueReminderRows(items);
+        dueReminderModal.show();
+        playAlarmFor10s();
+    }
+
+    async function checkDueRemindersGlobal() {
+        if (dueModalVisible) return;
+        try {
+            const res = await fetch('/api/notifications/due', { cache: 'no-store' });
+            if (!res.ok) return;
+            const items = await res.json();
+            if (!items || !items.length) return;
+            showDueReminderModal(items);
+        } catch (e) {}
+    }
+
+    window.addEventListener('click', ensureAudioUnlocked, { once: true });
+    window.addEventListener('keydown', ensureAudioUnlocked, { once: true });
+    setInterval(checkDueRemindersGlobal, 15000);
+    setTimeout(checkDueRemindersGlobal, 1200);
+    {% endif %}
 </script>
 </body>
 </html>

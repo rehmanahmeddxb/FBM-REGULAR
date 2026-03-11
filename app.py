@@ -5,9 +5,8 @@ app factory (like `from app import create_app`) while delegating the actual
 application implementation to `main.app`.
 """
 
-from main import app as main_app
+from main import app as main_app, _bootstrap_database
 from utils.module_loader import load_modules
-from models import db
 
 
 def create_app():
@@ -24,7 +23,7 @@ def create_app():
         app._modules_loaded = True
 
     with app.app_context():
-        db.create_all()
+        _bootstrap_database()
 
     return app
 

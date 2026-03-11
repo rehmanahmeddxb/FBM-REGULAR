@@ -6,10 +6,13 @@
             {% if type == 'cash' %}
                 <span class="text-success">Cash Received</span> Details
             {% else %}
-                <span class="text-danger">Credit Given</span> Details
+                <span class="text-danger">Due Amount</span> Details
             {% endif %}
         </h2>
-        <p class="text-white-50 mb-0">Detailed transaction breakdown</p>
+        <p class="text-white-50 mb-0 d-flex align-items-center gap-2">
+            <span>Detailed transaction breakdown</span>
+            <span class="badge bg-warning text-dark">Filtered: {{ transactions|length }}</span>
+        </p>
     </div>
     <a href="/" class="btn btn-outline-light rounded-pill px-4"><i class="bi bi-arrow-left me-2"></i>Back to Dashboard</a>
 </div>
@@ -47,27 +50,30 @@
 
 <div class="card border-0 shadow-sm" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px;">
     <div class="table-responsive">
-        <table class="table table-dark table-hover align-middle mb-0">
+        <table class="table table-dark table-hover align-middle mb-0 financial-details-table">
             <thead style="background: #0f172a;">
                 <tr>
-                    <th class="ps-4 py-3 text-white-50">Date</th>
+                    <th class="ps-4 py-3 text-white-50 fd-col-date">Date</th>
                     <th class="py-3 text-white-50">Client</th>
                     <th class="py-3 text-white-50">Type</th>
-                    <th class="py-3 text-white-50">Reference</th>
+                    <th class="py-3 text-white-50 fd-col-ref">Reference</th>
                     <th class="py-3 text-end pe-4 text-white-50">Amount</th>
                 </tr>
             </thead>
             <tbody style="background: #1e293b;">
                 {% for t in transactions %}
                 <tr style="border-bottom: 1px solid #334155;">
-                    <td class="ps-4 py-3">{{ t.date.strftime('%Y-%m-%d') if t.date else '' }}</td>
+                    <td class="ps-4 py-3 fd-date-cell">
+                        <div class="fd-date-main">{{ t.date.strftime('%Y-%m-%d') if t.date else '' }}</div>
+                        <div class="fd-date-sub">{{ t.date.strftime('%H:%M') if t.date and t.date.strftime is defined else '' }}</div>
+                    </td>
                     <td class="fw-bold text-white">{{ t.client }}</td>
                     <td>
                         <span class="badge bg-opacity-10 {{ 'bg-success text-success' if type == 'cash' else 'bg-warning text-warning' }} px-3 py-2 rounded-pill">
                             {{ t.type }}
                         </span>
                     </td>
-                    <td class="text-white-50">{{ t.ref }}</td>
+                    <td class="text-white-50 fd-ref-cell">{{ t.ref }}</td>
                     <td class="text-end pe-4 fw-bold fs-5 {{ 'text-success' if type == 'cash' else 'text-danger' }}">
                         Rs. {{ "{:,.0f}".format(t.amount) }}
                     </td>
@@ -90,4 +96,33 @@
         </table>
     </div>
 </div>
+<style>
+.financial-details-table {
+    table-layout: fixed;
+    width: 100%;
+}
+.financial-details-table .fd-col-date {
+    width: 96px;
+}
+.financial-details-table .fd-col-ref {
+    width: 32%;
+}
+.financial-details-table .fd-date-cell {
+    white-space: nowrap;
+    line-height: 1.1;
+}
+.financial-details-table .fd-date-main {
+    font-size: 0.78rem;
+}
+.financial-details-table .fd-date-sub {
+    font-size: 0.72rem;
+    opacity: 0.9;
+}
+.financial-details-table .fd-ref-cell {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.2;
+}
+</style>
 {% endblock %}

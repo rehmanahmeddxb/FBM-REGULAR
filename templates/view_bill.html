@@ -1,51 +1,245 @@
 {% extends "layout.html" %}
 {% block content %}
+{% set safe_previous_balance = (previous_balance|default(0, true)|float) %}
+{% set safe_client_balance = (client_balance|default(0, true)|float) %}
+{% set safe_bill_amount = (bill.amount|default(0, true)|float) %}
+{% set safe_bill_paid = (bill.paid_amount|default(0, true)|float) %}
+{% macro fmt_num(v) -%}
+{{ "{:,.2f}".format((v|default(0, true)|float)).rstrip('0').rstrip('.') }}
+{%- endmacro %}
+{% set pdf_bill_no = (bill.manual_bill_no or bill.auto_bill_no or bill.invoice_no or '') %}
+{% set pdf_download_url = url_for('download_invoice',
+    bill_no=pdf_bill_no,
+    src=request.args.get('src'),
+    src_id=request.args.get('src_id'),
+    client_code=request.args.get('client_code'),
+    client_name=request.args.get('client_name')
+) %}
+{% set pdf_print_url = url_for('download_invoice',
+    bill_no=pdf_bill_no,
+    action='print',
+    src=request.args.get('src'),
+    src_id=request.args.get('src_id'),
+    client_code=request.args.get('client_code'),
+    client_name=request.args.get('client_name')
+) %}
+<style>
+    .invoice-print-area,
+    .invoice-print-area * {
+        color: #000 !important;
+    }
+    .invoice-print-area .text-muted,
+    .invoice-print-area .text-secondary,
+    .invoice-print-area .text-danger,
+    .invoice-print-area .text-success {
+        color: #000 !important;
+    }
+    .invoice-print-area .invoice-type-badge {
+        display: inline-block;
+        border: 1px solid #000 !important;
+        background: #fff !important;
+        color: #000 !important;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.25;
+        padding: 0.25rem 0.5rem;
+        text-align: left;
+        max-width: 100%;
+        white-space: normal;
+    }
+    .invoice-header-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.2rem;
+    }
+
+    .material-stock-table {
+        width: 100%;
+        table-layout: fixed;
+    }
+    .material-stock-table th,
+    .material-stock-table td {
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+    .material-stock-table th:nth-child(1),
+    .material-stock-table td:nth-child(1) {
+        width: 40%;
+    }
+    .material-stock-table th:nth-child(2),
+    .material-stock-table td:nth-child(2),
+    .material-stock-table th:nth-child(3),
+    .material-stock-table td:nth-child(3),
+    .material-stock-table th:nth-child(4),
+    .material-stock-table td:nth-child(4) {
+        width: 20%;
+    }
+
+    @media print {
+        * {
+            color: #000 !important;
+            text-shadow: none !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .card {
+            max-width: 100% !important;
+            box-shadow: none !important;
+            border: 0 !important;
+        }
+        .card-body {
+            padding: 0 !important;
+            font-size: 11px !important;
+            line-height: 1.1 !important;
+        }
+        h2 { font-size: 18px !important; margin-bottom: 2px !important; }
+        h4, h5, h6 { margin-bottom: 2px !important; }
+        p { margin-bottom: 2px !important; }
+        .row { --bs-gutter-x: 0.3rem !important; }
+        .mb-4 { margin-bottom: 0.25rem !important; }
+        .mt-4 { margin-top: 0.25rem !important; }
+        .pb-3 { padding-bottom: 0.2rem !important; }
+        .pt-3 { padding-top: 0.2rem !important; }
+        .small, .x-small { font-size: 10px !important; }
+        .badge { font-size: 9px !important; padding: 0.08rem 0.2rem !important; }
+        .table { font-size: 10px !important; margin-bottom: 0.25rem !important; }
+        .table th, .table td { padding: 0.08rem 0.16rem !important; }
+        .table th { white-space: nowrap !important; }
+        .table thead { display: table-header-group; }
+        .table tfoot { display: table-footer-group; }
+        .bg-light,
+        .bg-white,
+        .text-bg-dark {
+            background: #fff !important;
+            border-color: #000 !important;
+        }
+        .invoice-print-area .invoice-type-badge {
+            background: #fff !important;
+            border-color: #000 !important;
+        }
+        .card, .card-body, .row, table, thead, tbody, tfoot, tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid-page !important;
+        }
+    }
+</style>
 <div class="card shadow-sm mx-auto border-0" style="max-width: 850px; background: white; color: black;">
     <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center d-print-none">
         <h5 class="mb-0">Bill Detail: {{ bill.manual_bill_no or bill.auto_bill_no or bill.invoice_no or '---' }}</h5>
-        <a href="/download_invoice/{{ (bill.manual_bill_no or bill.auto_bill_no or bill.invoice_no or '')|replace('#', '%23') }}" class="btn btn-light btn-sm fw-bold">
+        <a href="{{ pdf_download_url }}" class="btn btn-warning btn-sm fw-bold text-dark border border-warning-subtle">
             <i class="bi bi-file-earmark-pdf"></i> Download PDF
         </a>
     </div>
-    <div class="card-body p-5">
+    <div class="card-body p-5 invoice-print-area">
         <!-- Header -->
         <div class="row mb-4 border-bottom pb-3">
             <div class="col-8">
-                <h2 class="fw-bold text-dark mb-0">AHMED CEMENT</h2>
-                <p class="text-muted small mb-0">Professional Building Materials Store</p>
-                <p class="text-muted small">Main Road, City Center | 0300-1234567</p>
+                <h2 class="fw-bold mb-0">FAZAL BUILDING MATERIALS</h2>
+                <p class="small mb-0">JALAL PUR SOBTIAN</p>
+                <p class="small">+92302-0000993 +92331-0000993</p>
             </div>
-            <div class="col-4 text-end">
-                <h4 class="fw-bold text-uppercase text-secondary mb-1">INVOICE</h4>
-                <h5 class="fw-bold text-dark mb-0">{{ bill.manual_bill_no or bill.auto_bill_no or bill.invoice_no or '---' }}</h5>
-                <p class="text-muted small">{{ bill.date_posted.strftime('%d-%b-%Y') if (bill.date_posted is defined and bill.date_posted) else datetime.now().strftime('%d-%b-%Y') }}</p>
+            <div class="col-4 text-end invoice-header-right">
+                <h4 class="fw-bold text-uppercase mb-1">INVOICE</h4>
+                <div class="mb-1">
+                    <span class="invoice-type-badge">
+                        Transaction Type: {{ transaction_type_label or 'General Transaction' }}
+                    </span>
+                </div>
+                {% if transaction_type_note %}
+                <p class="small mb-1">{{ transaction_type_note }}</p>
+                {% endif %}
+                <h5 class="fw-bold mb-0">{{ bill.manual_bill_no or bill.auto_bill_no or bill.invoice_no or '---' }}</h5>
+                <div class="small mt-1">
+                    {% if bill.auto_bill_no is defined and bill.auto_bill_no %}
+                    <span class="badge bg-info text-dark">{{ bill.auto_bill_no }}</span>
+                    {% endif %}
+                    {% if bill.manual_bill_no is defined and bill.manual_bill_no %}
+                    <span class="badge bg-warning text-dark">{{ bill.manual_bill_no }}</span>
+                    {% endif %}
+                </div>
+                <p class="small">{{ bill.date_posted.strftime('%d-%b-%Y %I:%M %p') if (bill.date_posted is defined and bill.date_posted) else pk_now().strftime('%d-%b-%Y %I:%M %p') }}</p>
             </div>
         </div>
 
         <!-- Client Info -->
         <div class="row mb-4">
             <div class="col-6">
-                <h6 class="fw-bold text-uppercase text-secondary small mb-1">Bill To:</h6>
-                <h5 class="fw-bold text-dark mb-0">{{ bill.supplier if bill.supplier is defined else bill.client_name }}</h5>
-                {% if client %}
-                <p class="text-muted small mb-0">{{ client.address or '' }}</p>
-                <p class="text-muted small mb-0">{{ client.phone or '' }}</p>
+                <h6 class="fw-bold text-uppercase small mb-1">Bill To:</h6>
+                <h5 class="fw-bold mb-0">{{ bill.supplier if bill.supplier is defined else bill.client_name }}</h5>
+                {% if client and client.code %}
+                <p class="small mb-0">Code: {{ client.code }}</p>
                 {% endif %}
-            </div>
-            <div class="col-6 text-end">
                 {% if client %}
-                <div class="bg-light p-2 rounded border d-inline-block text-start" style="min-width: 200px;">
-                    <div class="d-flex justify-content-between"><span class="small text-muted">Previous Balance:</span> <span class="fw-bold">{{ "{:,.0f}".format(previous_balance) }}</span></div>
-                    <div class="d-flex justify-content-between border-bottom pb-1 mb-1"><span class="small text-muted">Current Bill:</span> <span class="fw-bold">{{ "{:,.0f}".format(bill.amount or 0) }}</span></div>
-                    <div class="d-flex justify-content-between"><span class="small text-dark fw-bold">Total Payable:</span> <span class="fw-bold text-danger">{{ "{:,.0f}".format(previous_balance + (bill.amount or 0)) }}</span></div>
-                </div>
+                <p class="small mb-0">{{ client.address or '' }}</p>
+                <p class="small mb-0">{{ client.phone or '' }}</p>
                 {% endif %}
             </div>
         </div>
 
+        {% set has_tx_details =
+            (bill.method is defined and bill.method) or
+            (bill.payment_type is defined and bill.payment_type) or
+            (bill.bank_name is defined and bill.bank_name) or
+            (bill.account_name is defined and bill.account_name) or
+            (bill.account_no is defined and bill.account_no) or
+            (bill.supplier_invoice_no is defined and bill.supplier_invoice_no) or
+            (bill.note is defined and bill.note)
+        %}
+        {% if has_tx_details %}
+        <div class="mb-4">
+            <h6 class="fw-bold text-uppercase small mb-2">Transaction Details</h6>
+            <div class="border rounded p-2 bg-light small">
+                {% if bill.method is defined and bill.method %}
+                <div class="d-flex justify-content-between border-bottom py-1">
+                    <span>Method:</span>
+                    <span class="fw-bold">{{ bill.method }}</span>
+                </div>
+                {% endif %}
+                {% if bill.payment_type is defined and bill.payment_type %}
+                <div class="d-flex justify-content-between border-bottom py-1">
+                    <span>Payment Type:</span>
+                    <span class="fw-bold">{{ bill.payment_type }}</span>
+                </div>
+                {% endif %}
+                {% if bill.bank_name is defined and bill.bank_name %}
+                <div class="d-flex justify-content-between border-bottom py-1">
+                    <span>Bank:</span>
+                    <span class="fw-bold">{{ bill.bank_name }}</span>
+                </div>
+                {% endif %}
+                {% if bill.account_name is defined and bill.account_name %}
+                <div class="d-flex justify-content-between border-bottom py-1">
+                    <span>Account Name:</span>
+                    <span class="fw-bold">{{ bill.account_name }}</span>
+                </div>
+                {% endif %}
+                {% if bill.account_no is defined and bill.account_no %}
+                <div class="d-flex justify-content-between border-bottom py-1">
+                    <span>Account No:</span>
+                    <span class="fw-bold">{{ bill.account_no }}</span>
+                </div>
+                {% endif %}
+                {% if bill.supplier_invoice_no is defined and bill.supplier_invoice_no %}
+                <div class="d-flex justify-content-between border-bottom py-1">
+                    <span>Supplier Invoice #:</span>
+                    <span class="fw-bold">{{ bill.supplier_invoice_no }}</span>
+                </div>
+                {% endif %}
+                {% if bill.note is defined and bill.note %}
+                <div class="pt-1">
+                    <span class="d-block">Comments / Notes:</span>
+                    <span class="fw-bold">{{ bill.note }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Items Table -->
         <table class="table table-bordered border-secondary mb-4">
-            <thead class="bg-light text-dark">
+            <thead class="bg-light">
                 <tr>
                     <th class="py-2">Description / Material</th>
                     <th class="text-end py-2" style="width: 100px;">Qty</th>
@@ -56,89 +250,139 @@
             <tbody>
                 {% for item in items %}
                 <tr>
-                    <td class="py-2">{{ item.name or item.material_name or item.product_name }}</td>
-                    <td class="text-end py-2">{{ item.qty }}</td>
-                    <td class="text-end py-2">{{ "{:,.0f}".format(item.price_at_time or 0) }}</td>
-                    <td class="text-end py-2 fw-bold">{{ "{:,.0f}".format((item.qty or 0) * (item.price_at_time or 0)) }}</td>
+                    <td class="py-2">{{ item.name or item.material_name or item.product_name or item.mat_name }}</td>
+                    <td class="text-end py-2">{{ fmt_num(item.qty) }}</td>
+                    <td class="text-end py-2">{{ fmt_num(item.price_at_time) }}</td>
+                    <td class="text-end py-2 fw-bold">{{ fmt_num((item.qty or 0) * (item.price_at_time or 0)) }}</td>
                 </tr>
                 {% endfor %}
                 {% if not items and type == 'Payment' %}
                 <tr>
-                    <td colspan="4" class="text-center py-3 fst-italic text-muted">Payment Received via {{ bill.method }}</td>
+                    <td colspan="4" class="text-center py-3 fst-italic">
+                        Payment Received via {{ bill.method }}
+                        {% if bill.bank_name %}
+                        <br><span class="small">({{ bill.bank_name }})</span>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endif %}
             </tbody>
             <tfoot>
                 <tr>
                     <td colspan="3" class="text-end fw-bold">Current Bill Total:</td>
-                    <td class="text-end fw-bold bg-light">{{ "{:,.0f}".format(bill.amount or 0) }}</td>
+                    <td class="text-end fw-bold bg-light">{{ fmt_num(safe_bill_amount) }}</td>
                 </tr>
-                {% if type in ['Booking', 'DirectSale', 'Invoice'] %}
+                {% if bill.discount and bill.discount > 0 %}
                 <tr>
-                    <td colspan="3" class="text-end text-muted">Paid Now:</td>
-                    <td class="text-end text-success fw-bold">{{ "{:,.0f}".format(bill.paid_amount or 0) }}</td>
+                    <td colspan="3" class="text-end fw-bold text-danger">Discount:</td>
+                    <td class="text-end fw-bold text-danger">{{ fmt_num(bill.discount) }}</td>
+                </tr>
+                {% endif %}
+                {% if type in ['Booking', 'DirectSale', 'Invoice', 'GRN'] %}
+                <tr>
+                    <td colspan="3" class="text-end fw-bold text-success">Paid Amount:</td>
+                    <td class="text-end fw-bold text-success">{{ fmt_num(safe_bill_paid) }}</td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="text-end fw-bold text-danger">Bill Pending:</td>
+                    {% if type == 'GRN' %}
+                    <td class="text-end fw-bold text-danger">{{ fmt_num(safe_bill_amount - safe_bill_paid) }}</td>
+                    {% else %}
+                    <td class="text-end fw-bold text-danger">{{ fmt_num(safe_bill_amount - safe_bill_paid - (bill.discount|default(0)|float)) }}</td>
+                    {% endif %}
                 </tr>
                 {% endif %}
             </tfoot>
         </table>
 
-        <!-- Grand Total Section -->
-        <div class="row mb-5">
-            <div class="col-6">
-                {% if recent_deliveries %}
-                <h6 class="fw-bold text-uppercase text-secondary small mb-2">Previous Deliveries Summary</h6>
-                <table class="table table-sm table-borderless small text-muted mb-0">
-                    {% for d in recent_deliveries %}
+        {% if bill.note %}
+        <div class="mb-4">
+            <h6 class="fw-bold text-uppercase small mb-2">Notes</h6>
+            <div class="border rounded p-2 bg-light small">{{ bill.note }}</div>
+        </div>
+        {% endif %}
+
+        {% if material_stock_summary %}
+        <div class="mb-4">
+            <h6 class="fw-bold text-uppercase small mt-3 mb-2">Material Delivery Summary</h6>
+            <table class="table table-sm table-bordered small mb-0 material-stock-table">
+                <thead class="bg-light">
                     <tr>
-                        <td>{{ d.date }}</td>
-                        <td>{{ d.material }}</td>
-                        <td>{{ d.qty|int }} Bags</td>
-                        <td>{{ d.bill_no or '-' }}</td>
+                        <th>Material</th>
+                        <th class="text-end">Previous Material</th>
+                        <th class="text-end">Current Delivery</th>
+                        <th class="text-end">After Delivery Remaining</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in material_stock_summary %}
+                    <tr>
+                        <td>{{ row.material }}</td>
+                        <td class="text-end">{{ "{:,.2f}".format(row.last_stock or 0) }}</td>
+                        <td class="text-end">{{ "{:,.2f}".format(row.dispatched or 0) }}</td>
+                        <td class="text-end">{{ "{:,.2f}".format(row.remaining or 0) }}</td>
                     </tr>
                     {% endfor %}
-                </table>
-                {% endif %}
-            </div>
-            <div class="col-6">
-                <div class="border rounded p-3 bg-light">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="fw-bold">Previous Balance:</span>
-                        <span>{{ "{:,.0f}".format(previous_balance) }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="fw-bold">Current Bill Net:</span>
-                        <span>
-                            {% if type == 'Payment' %}
-                                -{{ "{:,.0f}".format(bill.amount or 0) }}
-                            {% else %}
-                                {{ "{:,.0f}".format((bill.amount or 0) - (bill.paid_amount or 0)) }}
-                            {% endif %}
-                        </span>
-                    </div>
-                    <div class="d-flex justify-content-between border-top border-dark pt-2 mt-2">
-                        <span class="h5 fw-bold text-dark mb-0">Net Closing Balance:</span>
-                        <span class="h5 fw-bold text-danger mb-0">{{ "{:,.0f}".format(client_balance) }}</span>
-                    </div>
-                </div>
-            </div>
+                </tbody>
+            </table>
         </div>
+        {% endif %}
 
         <!-- Footer -->
         <div class="text-center border-top pt-3 mt-4">
-            <p class="text-muted small mb-1">Thank you for your business!</p>
-            <p class="text-muted x-small">Software Developed by Ahmed Cement IT Dept.</p>
+            <p class="small mb-1">Thank you for your business!</p>
+            <p class="x-small">Software Developed by AMS SYSTEM FOR EASE</p>
         </div>
 
-        {% if bill.photo_path %}
-        <div class="mt-4 text-center d-print-none">
-            <p class="text-muted small">Attached Photo:</p>
-            <img src="/static/uploads/{{ bill.photo_path }}" class="img-fluid rounded border shadow-sm" style="max-height: 400px;">
-        </div>
-        {% endif %}
     </div>
     <div class="card-footer bg-white text-center d-print-none">
-        <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
-        <button onclick="window.print()" class="btn btn-primary fw-bold"><i class="bi bi-printer me-2"></i>Print Invoice</button>
+        <a href="javascript:history.back()" class="btn btn-dark fw-bold border border-dark-subtle">Go Back</a>
+        <a href="{{ pdf_print_url }}" class="btn btn-success fw-bold border border-success-subtle"><i class="bi bi-printer me-2"></i>Print Invoice</a>
     </div>
 </div>
+
+{% if bill.photo_path or bill.photo_url %}
+<div class="container mt-4 d-print-none" style="max-width: 850px;">
+    <div class="card border-0 shadow-sm" style="background: #1e293b; border: 2px solid #475569 !important; border-radius: 15px;">
+        <div class="card-header bg-transparent border-secondary">
+            <h5 class="text-warning fw-bold mb-0"><i class="bi bi-images me-2"></i>Attachments</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% if bill.photo_path %}
+                <div class="col-md-6">
+                    <div class="p-2 border border-secondary rounded bg-dark text-center">
+                        <h6 class="text-white-50 small fw-bold mb-2">UPLOADED PHOTO</h6>
+                        <img src="/static/uploads/{{ bill.photo_path }}" class="img-fluid rounded mb-2" style="max-height: 200px; object-fit: contain;">
+                        <a href="/static/uploads/{{ bill.photo_path }}" target="_blank" class="btn btn-sm btn-outline-info w-100">
+                            <i class="bi bi-zoom-in me-1"></i> View Full Size
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+                {% if bill.photo_url %}
+                <div class="col-md-6">
+                    <div class="p-2 border border-secondary rounded bg-dark text-center h-100 d-flex flex-column justify-content-center">
+                        <h6 class="text-white-50 small fw-bold mb-3">EXTERNAL LINK (DRIVE)</h6>
+                        <i class="bi bi-google display-1 text-white-50 mb-3"></i>
+                        <a href="{{ bill.photo_url }}" target="_blank" class="btn btn-sm btn-outline-warning w-100 mt-auto">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> Open URL
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if auto_print %}
+<script>
+    window.addEventListener('load', function () {
+        setTimeout(function () { window.print(); }, 120);
+    });
+</script>
+{% endif %}
+
 {% endblock %}

@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card shadow-sm mx-auto border-0" style="max-width: 850px; background: white; color: black;">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center d-print-none">
+        <h5 class="mb-0">Supplier Payment: PAY-{{ payment.id }}</h5>
+        <a href="{{ url_for('download_supplier_payment', payment_id=payment.id) }}" class="btn btn-warning btn-sm fw-bold text-dark border border-warning-subtle">
+            <i class="bi bi-file-earmark-pdf"></i> Download PDF
+        </a>
+    </div>
+    <div class="card-body p-5">
+        <div class="row mb-4 border-bottom pb-3">
+            <div class="col-8">
+                <h2 class="fw-bold text-dark mb-0">FAZAL BUILDING MATERIALS</h2>
+                <p class="text-muted small mb-0">JALAL PUR SOBTIAN</p>
+                <p class="text-muted small">+92302-0000993 +92331-0000993</p>
+            </div>
+            <div class="col-4 text-end">
+                <h4 class="fw-bold text-uppercase text-secondary mb-1">SUPPLIER PAYMENT</h4>
+                <h5 class="fw-bold text-dark mb-0">PAY-{{ payment.id }}</h5>
+                <p class="text-muted small">{{ payment.date_posted.strftime('%d-%b-%Y') if payment.date_posted else datetime.now().strftime('%d-%b-%Y') }}</p>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-6">
+                <h6 class="fw-bold text-uppercase text-secondary small mb-1">Paid To:</h6>
+                <h5 class="fw-bold text-dark mb-0">{{ supplier.name if supplier else 'Supplier' }}</h5>
+                {% if supplier %}
+                <p class="text-muted small mb-0">{{ supplier.address or '' }}</p>
+                <p class="text-muted small mb-0">{{ supplier.phone or '' }}</p>
+                {% endif %}
+            </div>
+            <div class="col-6 text-end">
+                <div class="bg-light p-2 rounded border d-inline-block text-start" style="min-width: 200px;">
+                    <div class="d-flex justify-content-between border-bottom pb-1 mb-1"><span class="small text-muted">Method:</span> <span class="fw-bold">{{ payment.method or '-' }}</span></div>
+                    <div class="d-flex justify-content-between"><span class="small text-muted">Amount Paid:</span> <span class="fw-bold text-success">{{ "{:,.0f}".format(payment.amount or 0) }}</span></div>
+                </div>
+            </div>
+        </div>
+
+        {% if payment.method == 'Bank Transfer' %}
+        <div class="mb-4">
+            <h6 class="fw-bold text-uppercase text-secondary small mb-2">Bank Details</h6>
+            <table class="table table-bordered border-secondary mb-0">
+                <tbody>
+                    <tr>
+                        <td class="fw-bold">Bank Name</td>
+                        <td>{{ payment.bank_name or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Account Name</td>
+                        <td>{{ payment.account_name or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Account No</td>
+                        <td>{{ payment.account_no or '-' }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if payment.note %}
+        <div class="mb-4">
+            <h6 class="fw-bold text-uppercase text-secondary small mb-2">Notes</h6>
+            <div class="border rounded p-2 bg-light small">{{ payment.note }}</div>
+        </div>
+        {% endif %}
+
+        <div class="text-center border-top pt-3 mt-4">
+            <p class="text-muted small mb-1">Thank you for your business!</p>
+            <p class="text-muted x-small">Software Developed by AMS SYSTEM FOR EASE</p>
+        </div>
+    </div>
+    <div class="card-footer bg-white text-center d-print-none">
+        <a href="javascript:history.back()" class="btn btn-dark fw-bold border border-dark-subtle">Go Back</a>
+        <button onclick="window.print()" class="btn btn-success fw-bold border border-success-subtle"><i class="bi bi-printer me-2"></i>Print Receipt</button>
+    </div>
+</div>
+{% endblock %}

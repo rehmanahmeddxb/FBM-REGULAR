@@ -7,6 +7,7 @@ from flask import Blueprint, render_template, jsonify
 from flask_login import login_required, current_user
 from utils.module_loader import get_modules_info
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 # Module configuration
 MODULE_CONFIG = {
@@ -19,6 +20,11 @@ MODULE_CONFIG = {
 }
 
 admin_bp = Blueprint('admin', __name__)
+PK_TZ = ZoneInfo('Asia/Karachi')
+
+
+def pk_now():
+    return datetime.now(PK_TZ).replace(tzinfo=None)
 
 
 def is_admin():
@@ -45,7 +51,7 @@ def dashboard():
     context = {
         'module_count': module_count,
         'blueprint_count': blueprint_count,
-        'system_time': datetime.now(),
+        'system_time': pk_now(),
         'modules': modules
     }
     
@@ -78,7 +84,7 @@ def api_get_modules():
     
     result = {
         'success': True,
-        'timestamp': datetime.now().isoformat(),
+        'timestamp': pk_now().isoformat(),
         'total_modules': len(modules),
         'modules': [
             {
@@ -99,7 +105,7 @@ def api_health_check():
     """API endpoint for system health check."""
     return jsonify({
         'status': 'healthy',
-        'timestamp': datetime.now().isoformat(),
+        'timestamp': pk_now().isoformat(),
         'modules_loaded': len(get_modules_info('blueprints'))
     })
 

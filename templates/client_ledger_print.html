@@ -1,0 +1,229 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    .invoice-print-area,
+    .invoice-print-area * {
+        color: #000 !important;
+    }
+    .invoice-print-area .text-muted,
+    .invoice-print-area .text-secondary,
+    .invoice-print-area .text-danger,
+    .invoice-print-area .text-success,
+    .invoice-print-area .text-info,
+    .invoice-print-area .text-warning {
+        color: #000 !important;
+    }
+    .invoice-header-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.2rem;
+    }
+
+    @media print {
+        * {
+            color: #000 !important;
+            text-shadow: none !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .card {
+            max-width: 100% !important;
+            box-shadow: none !important;
+            border: 0 !important;
+        }
+        .card-body {
+            padding: 0 !important;
+            font-size: 11px !important;
+            line-height: 1.1 !important;
+        }
+        h2 { font-size: 18px !important; margin-bottom: 2px !important; }
+        h4, h5, h6 { margin-bottom: 2px !important; }
+        p { margin-bottom: 2px !important; }
+        .row { --bs-gutter-x: 0.3rem !important; }
+        .mb-4 { margin-bottom: 0.25rem !important; }
+        .mt-4 { margin-top: 0.25rem !important; }
+        .pb-3 { padding-bottom: 0.2rem !important; }
+        .pt-3 { padding-top: 0.2rem !important; }
+        .small, .x-small { font-size: 10px !important; }
+        .table { font-size: 10px !important; margin-bottom: 0.25rem !important; }
+        .table th, .table td { padding: 0.08rem 0.16rem !important; }
+        .table th { white-space: nowrap !important; }
+        .table td {
+            white-space: normal !important;
+            overflow-wrap: break-word !important;
+            word-break: normal !important;
+        }
+        .table thead { display: table-header-group; }
+        .table tfoot { display: table-footer-group; }
+        .bg-light,
+        .bg-white,
+        .text-bg-dark {
+            background: #fff !important;
+            border-color: #000 !important;
+        }
+        .card, .card-body, .row, table, thead, tbody, tfoot, tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid-page !important;
+        }
+    }
+</style>
+<div class="card shadow-sm mx-auto border-0" style="max-width: 850px; background: white; color: black;">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center d-print-none">
+        <h5 class="mb-0">Client Ledger: {{ client.name }}</h5>
+        <a href="{{ url_for('download_client_ledger', id=client.id) }}" class="btn btn-warning btn-sm fw-bold text-dark border border-warning-subtle">
+            <i class="bi bi-file-earmark-pdf"></i> Download PDF
+        </a>
+    </div>
+
+    <div class="card-body p-5 invoice-print-area">
+        <div class="row mb-4 border-bottom pb-3">
+            <div class="col-8">
+                <h2 class="fw-bold mb-0">FAZAL BUILDING MATERIALS</h2>
+                <p class="small mb-0">JALAL PUR SOBTIAN</p>
+                <p class="small">+92302-0000993 +92331-0000993</p>
+            </div>
+            <div class="col-4 text-end invoice-header-right">
+                <h4 class="fw-bold text-uppercase mb-1">INVOICE</h4>
+                <h5 class="fw-bold mb-0">CL-{{ client.id }}-{{ generated_at.strftime('%Y%m%d') }}</h5>
+                <p class="small">{{ generated_at.strftime('%d-%b-%Y %I:%M %p') }}</p>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-6">
+                <h6 class="fw-bold text-uppercase small mb-1">Bill To:</h6>
+                <h5 class="fw-bold mb-0">{{ client.name }}</h5>
+                <p class="small mb-0">Code: {{ client.code or 'N/A' }}</p>
+                <p class="small mb-0">{{ client.address or '' }}</p>
+                <p class="small mb-0">{{ client.phone or '' }}</p>
+            </div>
+            <div class="col-6 text-end">
+                <div class="bg-light p-2 rounded border d-inline-block text-start" style="min-width: 240px;">
+                    <div class="d-flex justify-content-between">
+                        <span class="small">TOTAL DUE:</span>
+                        <span class="fw-bold">{{ "{:,.2f}".format(total_debit or 0) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="small">TOTAL PAID:</span>
+                        <span class="fw-bold">{{ "{:,.2f}".format(total_credit or 0) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-top pt-1 mt-1">
+                        <span class="small fw-bold">NET PENDING:</span>
+                        <span class="fw-bold">{{ "{:,.2f}".format(total_balance or 0) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="fw-bold text-uppercase small mb-2">Financial Transaction Ledger</h6>
+        <table class="table table-bordered border-secondary mb-4">
+            <thead class="bg-light">
+                <tr>
+                    <th class="py-2">Date</th>
+                    <th class="py-2">Description</th>
+                    <th class="py-2">Bill #</th>
+                    <th class="text-end py-2" style="width: 110px;">Due Amount</th>
+                    <th class="text-end py-2" style="width: 110px;">Paid Amount</th>
+                    <th class="text-end py-2" style="width: 120px;">Pending Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in financial_history %}
+                <tr>
+                    <td class="py-2">{{ row.date_display or '' }}</td>
+                    <td class="py-2">
+                        {{ row.description }}
+                        {% if row.is_cancel_entry %}
+                        <div class="small text-muted">
+                            Audit row (value posted in paid amount{% if row.cancel_amount is not none %}, Value Rs. {{ "{:,.2f}".format(row.cancel_amount) }}{% endif %})
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="{{ 'py-2' if row.bill_no else 'py-2 text-center' }}">{{ row.bill_no or '-' }}</td>
+                    <td class="{{ 'text-end' if row.debit > 0 else 'text-center' }} py-2 fw-bold">{{ "{:,.2f}".format(row.debit) if row.debit > 0 else '-' }}</td>
+                    <td class="{{ 'text-end' if row.credit > 0 else 'text-center' }} py-2 fw-bold">{{ "{:,.2f}".format(row.credit) if row.credit > 0 else '-' }}</td>
+                    <td class="text-end py-2 fw-bold">{{ "{:,.2f}".format(row.balance or 0) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-3 fst-italic">No financial transactions found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if pending_bills %}
+        <h6 class="fw-bold text-uppercase small mb-2">Pending Bills</h6>
+        <table class="table table-bordered border-secondary mb-4">
+            <thead class="bg-light">
+                <tr>
+                    <th class="py-2">Bill #</th>
+                    <th class="text-end py-2" style="width: 120px;">Amount</th>
+                    <th class="py-2" style="width: 90px;">Status</th>
+                    <th class="py-2">Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in pending_bills %}
+                <tr>
+                    <td class="{{ 'py-2' if b.bill_no else 'py-2 text-center' }}">{{ b.bill_no or '-' }}</td>
+                    <td class="text-end py-2 fw-bold">{{ "{:,.2f}".format(b.amount or 0) }}</td>
+                    <td class="py-2">{{ 'Paid' if b.is_paid else 'Pending' }}</td>
+                    <td class="py-2">{{ b.reason or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if material_history_grouped %}
+        <h6 class="fw-bold text-uppercase small mb-2">Material Transaction Ledger</h6>
+        <table class="table table-bordered border-secondary mb-4">
+            <thead class="bg-light">
+                <tr>
+                    <th class="py-2">Date</th>
+                    <th class="py-2">Bill #</th>
+                    <th class="py-2">Material</th>
+                    <th class="text-end py-2" style="width: 90px;">Added</th>
+                    <th class="text-end py-2" style="width: 90px;">Dispatched</th>
+                    <th class="text-end py-2" style="width: 100px;">Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for material_name, items in material_history_grouped.items() %}
+                    {% for m in items %}
+                    <tr>
+                        <td class="py-2">{{ m.date or '' }}</td>
+                        <td class="{{ 'py-2' if m.bill_no else 'py-2 text-center' }}">{{ m.bill_no or '-' }}</td>
+                        <td class="py-2">{{ m.material_display or material_name }}</td>
+                        <td class="{{ 'text-end' if (m.qty_added or 0) > 0 else 'text-center' }} py-2 fw-bold">{{ "{:,.2f}".format(m.qty_added or 0) if (m.qty_added or 0) > 0 else '-' }}</td>
+                        <td class="{{ 'text-end' if (m.qty_dispatched or 0) > 0 else 'text-center' }} py-2 fw-bold">{{ "{:,.2f}".format(m.qty_dispatched or 0) if (m.qty_dispatched or 0) > 0 else '-' }}</td>
+                        <td class="text-end py-2 fw-bold">{{ "{:,.2f}".format(m.balance or 0) }}</td>
+                    </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        <div class="text-center border-top pt-3 mt-4">
+            <p class="small mb-1">This statement includes all client booking, payment, and sale transactions.</p>
+            <p class="x-small">Software Developed by AMS SYSTEM FOR EASE</p>
+        </div>
+    </div>
+
+    <div class="card-footer bg-white text-center d-print-none">
+        <a href="javascript:history.back()" class="btn btn-dark fw-bold border border-dark-subtle">Go Back</a>
+        <a href="{{ url_for('download_client_ledger', id=client.id, action='print') }}" class="btn btn-success fw-bold border border-success-subtle"><i class="bi bi-printer me-2"></i>Print Invoice</a>
+    </div>
+</div>
+
+{% if auto_print %}
+<script>
+    window.addEventListener('load', function () {
+        setTimeout(function () { window.print(); }, 120);
+    });
+</script>
+{% endif %}
+{% endblock %}
